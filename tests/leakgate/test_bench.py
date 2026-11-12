@@ -225,3 +225,15 @@ class SealedTokenTests(unittest.TestCase):
         leakgate.run_bench()
         with open(path, "rb") as handle:
             self.assertEqual(handle.read(), before)
+
+
+class GitleaksPinTests(unittest.TestCase):
+    def test_ci_runs_a_gitleaks_that_reads_this_config(self):
+        """An older gitleaks silently ignores [[allowlists]], and then flags the planted corpus."""
+        def version(text):
+            return tuple(int(part) for part in text.lstrip("v").split("."))
+        with open(os.path.join(support.REPO_ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as handle:
+            pinned = re.search(r'GITLEAKS_VERSION:\s*"([0-9.]+)"', handle.read()).group(1)
+        with open(os.path.join(support.REPO_ROOT, ".gitleaks.toml"), encoding="utf-8") as handle:
+            minimum = re.search(r'^minVersion\s*=\s*"(v?[0-9.]+)"', handle.read(), re.M).group(1)
+        self.assertGreaterEqual(version(pinned), version(minimum))

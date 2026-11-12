@@ -16,6 +16,8 @@ See [ROADMAP.md](ROADMAP.md). Five remain, and each needs the owner: GAP-6 (a li
 
 ### Fixed: findings from the final pre-launch review
 
+- CI pinned gitleaks 8.24.3, but `.gitleaks.toml` needs 8.25 or later for its `[[allowlists]]`, so the leak gate's planted corpus was flagged on the first full scan. CI now runs 8.30.1, and a test keeps the pin at or above the config's `minVersion`.
+
 - The leak gate's test corpus stores its four provider-shaped fake tokens sealed (`s{{seal}}k_test_...`), and the bench unseals them in a temporary copy before scanning. GitHub's secret push protection blocked the first public push over them, although each is an obvious placeholder. Recall is unchanged at 184/184.
 
 - The shell guard now catches writing into a protected folder (`cp x profile/`, `cp -t profile x`, `mv x profile`), wildcards that reach a protected file (`rm -rf *`, `rm -f *.json`), commands that revert the whole tree (`git checkout -- .`, `git restore .`, `git reset --hard`, `git stash`), `curl -o`, `wget -O`, `find -delete` and `-exec`, `tar x`, `unzip`, `patch`, `git apply`, and options that hid the program (`command -p`, `sudo -u`, `env -u`, `timeout`, `git -C`).
