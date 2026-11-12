@@ -16,7 +16,7 @@ Read `START-HERE.md`. It has the install steps for every harness, written for pe
 
 ## If you are building or changing SOTACOMMAND
 
-Everything below applies. Open gaps are in `ROADMAP.md`, and `CONTRIBUTING.md` says how to propose a change. If your copy has an `internal/` folder, it holds the maintainers' plans and mission briefs; it never ships, and public copies don't have it.
+Everything below applies. Open gaps are in `ROADMAP.md`, and `CONTRIBUTING.md` says how to propose a change. If your copy has an `internal/` folder, you are in the maintainers' private copy: read `internal/SOP.md` before anything else. It maps every module and holds the procedures for changes, syncing to the public repository and releases. `internal/` never ships, and public copies don't have it.
 
 ## Rules for every session
 
