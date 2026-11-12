@@ -1,0 +1,6 @@
+{
+  "name": "sotacommand-engine",
+  "version": "0.1.0",
+  "description": "Executable roles with tool limits, hooks and a convergence workflow.",
+  "license": "Apache-2.0"
+}

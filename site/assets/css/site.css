@@ -1,0 +1,322 @@
+/*
+  Docs site styles. No web fonts, no external requests. Light and dark values
+  are separate steps of one palette, shared with the eval dashboard.
+*/
+
+:root {
+  color-scheme: light dark;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --hairline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.12);
+  --link: #1c5cab;
+  --focus: #2a78d6;
+  --code: #f0efec;
+  --accent: #2a78d6;
+  --note: #2a78d6;
+  --token-comment: #6b6a65;
+  --token-string: #0f6b3f;
+  --token-keyword: #1c5cab;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --hairline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.12);
+    --link: #86b6ef;
+    --focus: #86b6ef;
+    --code: #1f1f1e;
+    --accent: #3987e5;
+    --note: #3987e5;
+    --token-comment: #a3a29b;
+    --token-string: #6fcf97;
+    --token-keyword: #86b6ef;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.wrap {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 0.15em;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--focus);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Header and navigation */
+
+.site-header {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.site-title {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+
+.site-nav a {
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.35em;
+}
+
+/* Content */
+
+.content {
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 2.125rem;
+}
+
+h2 {
+  margin: 2.5rem 0 0.75rem;
+  padding-top: 0.25rem;
+  font-size: 1.5rem;
+}
+
+h3 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.1875rem;
+}
+
+p,
+ul,
+ol,
+table,
+pre,
+blockquote {
+  margin: 0 0 1rem;
+}
+
+li + li {
+  margin-top: 0.25rem;
+}
+
+blockquote {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--note);
+  border-radius: 0.375rem;
+  background: var(--surface);
+}
+
+blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+code,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875em;
+}
+
+code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--code);
+  overflow-wrap: anywhere;
+}
+
+pre {
+  padding: 0.875rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--code);
+  line-height: 1.45;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  font-size: 1em;
+  overflow-wrap: normal;
+}
+
+/* Rouge tokens: a few, kept quiet */
+.highlight .c,
+.highlight .c1,
+.highlight .cm,
+.highlight .cs {
+  color: var(--token-comment);
+}
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .sb {
+  color: var(--token-string);
+}
+
+.highlight .k,
+.highlight .kd,
+.highlight .kn,
+.highlight .nb {
+  color: var(--token-keyword);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+
+thead th {
+  border-bottom-color: var(--border);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Footer */
+
+.site-footer {
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.site-footer p {
+  margin: 1.25rem 0 2rem;
+}
+
+@media (max-width: 40rem) {
+  body {
+    font-size: 16px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  table {
+    font-size: 0.875rem;
+  }
+
+  /* Hyphenation lowers each cell's minimum width, so tables fit a phone
+     screen and keep their table semantics instead of becoming scroll boxes. */
+  th,
+  td {
+    padding: 0.5rem 0.375rem;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .skip-link,
+  .site-nav {
+    display: none;
+  }
+
+  pre {
+    white-space: pre-wrap;
+  }
+}

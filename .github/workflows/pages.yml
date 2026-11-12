@@ -1,0 +1,104 @@
+# Docs site: build site/ with the same Jekyll and plugin set GitHub Pages
+# uses, on every pull request that touches it. Deploy only from main, and only
+# when the repository is public.
+#
+# Pages can publish a branch only from / or /docs, so site/ needs the
+# "GitHub Actions" source (Settings > Pages; see .github/rulesets.md). A
+# Pages site is public even when its repository is private, which is why a
+# private repository builds but never deploys.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded pull request builds, but let a deployment finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build site (Jekyll)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Jekyll's GitHub metadata plugin reads the Pages site URL for baseurl.
+      pages: read
+    outputs:
+      deploy: ${{ steps.plan.outputs.deploy }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Decide what to do
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          present=false
+          deploy=false
+          if [ -f site/_config.yml ]; then
+            present=true
+            if [ "$EVENT" != "pull_request" ] && [ "$PRIVATE" != "true" ]; then
+              deploy=true
+            fi
+          else
+            echo "::notice::site/_config.yml is not in this branch yet; nothing to build."
+          fi
+          if [ "$present" = "true" ] && [ "$PRIVATE" = "true" ]; then
+            echo "::notice::Building only: this repository is private and a Pages site would be public."
+          fi
+          {
+            echo "present=$present"
+            echo "deploy=$deploy"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build with Jekyll
+        if: steps.plan.outputs.present == 'true'
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
+        with:
+          source: ./site
+          destination: ./_site
+
+      - name: Upload the site artifact
+        if: steps.plan.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ./_site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: needs.build.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

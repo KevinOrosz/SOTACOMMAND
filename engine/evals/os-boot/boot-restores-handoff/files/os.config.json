@@ -1,0 +1,6 @@
+{
+  "memory_caps": [
+    {"path": "memory/HANDOFF.md", "max_bytes": 900, "max_lines": 15},
+    {"path": "memory/lessons.md", "max_lines": 40}
+  ]
+}

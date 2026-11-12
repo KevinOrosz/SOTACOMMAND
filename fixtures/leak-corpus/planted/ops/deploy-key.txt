@@ -1,0 +1,4 @@
+Deploy key for the studio server (planted, not a real key):
+-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAAPLANTEDPLANTEDPLANTED
+-----END OPENSSH PRIVATE KEY-----

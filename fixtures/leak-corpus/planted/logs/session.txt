@@ -1,0 +1,4 @@
+2026-10-23 session open
+loaded Rule 4 and lesson #2
+model=claude-opus-4-1 cwd=/Users/avery/work
+decision: Avery-ordered 10-24

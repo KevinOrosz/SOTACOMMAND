@@ -1,0 +1,5 @@
+# Capability tiers map to models through repository variables, never here.
+tiers:
+  low: vars.TIER_LOW_MODEL
+  mid: vars.TIER_MID_MODEL
+  high: vars.TIER_HIGH_MODEL

@@ -1,0 +1,4 @@
+[service]
+name = "studio-api"
+openai_key = "sk-proj-PLANTED0plantedPLANTED0plantedPLANTED0pl"
+owner_email = "avery@example.invalid"

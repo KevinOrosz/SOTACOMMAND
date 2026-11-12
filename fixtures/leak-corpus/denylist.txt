@@ -1,0 +1,5 @@
+# TEST-ONLY plaintext denylist for leakgate bench (rule id: denylist-term).
+# Invented terms. The bench never reads a real denylist.
+Halden Marsh
+QUILLWORK
+[substring] hollisfarm

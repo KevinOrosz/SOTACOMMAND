@@ -1,0 +1,16 @@
+{
+  "name": "sotacommand-engine",
+  "version": "0.1.0",
+  "description": "Executable agent roles: each role is a subagent whose boundaries are enforced by tool limits, a protected-path hook and a worktree, plus a session ritual run by hooks and a convergence workflow.",
+  "author": {
+    "name": "SOTACOMMAND"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "agents",
+    "roles",
+    "hooks",
+    "workflow",
+    "governance"
+  ]
+}

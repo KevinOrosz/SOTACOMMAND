@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: csv-sales-totals
+expected_outcome: "summary.md reports 8 rows and 4 columns, totals 510.99 for amount and 16 for units, and flags -15.25 (row 3) and -30.00 (row 8)."
+context:
+  scaffold_script: place-files.sh

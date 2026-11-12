@@ -1,0 +1,11 @@
+# Issue forms only. Blank issues are off, so every report arrives with what
+# triage needs. Security reports never go in issues: the link below opens
+# GitHub's private vulnerability reporting, as SECURITY.md explains.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem privately
+    url: https://github.com/KevinOrosz/SOTACOMMAND/security/advisories/new
+    about: Never in a public issue. Only the maintainers see a private report.
+  - name: Long-term memory for your team (SOTASECONDBRAIN)
+    url: https://github.com/KevinOrosz/SOTASECONDBRAIN
+    about: Questions about the second brain belong in its own repository.

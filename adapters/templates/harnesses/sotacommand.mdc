@@ -1,0 +1,8 @@
+---
+description: SOTACOMMAND roles, boot, close and WIZARD rules for this project
+alwaysApply: true
+---
+
+Follow `AGENTS.md` in the project root. It defines the roles and their boundaries, the boot and close steps, and what to do when the owner types `WIZARD`. Skills are in `.agents/skills/`: read a skill's `SKILL.md` before you use it.
+
+@AGENTS.md

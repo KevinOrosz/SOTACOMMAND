@@ -1,0 +1,5 @@
+[project]
+name = "studio-tools"
+version = "0.3.1"
+authors = [{ name = "Avery Example", email = "avery@example.invalid" }]
+description = "Tools for Brightwater Atelier"

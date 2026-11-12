@@ -1,0 +1,12 @@
+{
+  "note": "Synthetic sample numbers for the leak-gate clean corpus. Eval results may name the pinned model.",
+  "schemaVersion": "1",
+  "date": "2026-10-30",
+  "model": "claude-sonnet-4-5",
+  "judgeModel": "claude-haiku-4-5",
+  "aggregates": {"overallScore": 0.87, "casesPassed": 3, "casesTotal": 3, "meanDelta": 0.31},
+  "cases": [{"name": "basic", "score": 0.9, "delta": 0.35}],
+  "costUsd": 1.42,
+  "durationSeconds": 312,
+  "claudeVersion": "2.1.318"
+}

@@ -1,0 +1,34 @@
+# Docs site. GitHub Pages builds this folder with its default Jekyll and plugin
+# set; it needs no Gemfile and no extra plugins. Branch publishing serves only
+# the repository root or docs/, so Pages must publish this folder through a
+# workflow (actions/jekyll-build-pages with source: ./site).
+#
+# Generated files: evals/index.html, llms.txt and llms-full.txt come from
+# tools/repo/site/build.py. Edit the pages and eval summaries, then run it.
+# That tool reads title, description, url and baseurl from this file, so keep
+# those four on single lines.
+#
+# Leave url and baseurl unset: GitHub Pages fills them in from the repository,
+# but only while they are unset. Set both only for a custom domain, for example
+#   url: "https://docs.example.org"
+#   baseurl: ""
+# and llms.txt and the README proof block then switch to absolute links.
+
+title: SOTACOMMAND
+description: "A portable operating system for a team of AI agents: roles, skills, memory and governance as plain files, with each skill's eval results published."
+lang: en
+
+# The site ships its own layout and stylesheet, so no theme is loaded.
+theme: null
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  auto_ids: true
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="{{ site.lang | default: 'en' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{% if page.url == "/" %}{{ site.title }}{% else %}{{ page.title }} · {{ site.title }}{% endif %}</title>
+<meta name="description" content="{{ page.description | default: site.description | strip_html | normalize_whitespace | escape }}">
+<link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="site-title" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+    <nav class="site-nav" aria-label="Docs">
+      <ul>
+        {%- assign nav_pages = site.pages | sort: "nav_order" -%}
+        {%- for item in nav_pages -%}
+        {%- if item.nav_order %}
+        <li><a href="{{ item.url | relative_url }}"{% if item.url == page.url %} aria-current="page"{% endif %}>{{ item.nav_title | default: item.title }}</a></li>
+        {%- endif -%}
+        {%- endfor %}
+        <li><a href="{{ '/evals/' | relative_url }}">Eval results</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="content" class="wrap content">
+{{ content }}
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>For agents and tools: <a href="{{ '/llms.txt' | relative_url }}">llms.txt</a> indexes these pages, and <a href="{{ '/llms-full.txt' | relative_url }}">llms-full.txt</a> holds all of them in one file.</p>
+  </div>
+</footer>
+</body>
+</html>

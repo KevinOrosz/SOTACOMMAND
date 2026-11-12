@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: boot-routes-to-builder
+expected_outcome: "After booting, the orchestrator delegates the code change to the builder role instead of editing cli.py itself."
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,6 @@
+sku,item,stock,reorder_level,unit_cost
+A-100,widget,25,10,2.5
+A-101,gadget,,5,10.25
+A-102,gizmo,7,12,
+B-200,doohickey,0,4,3.75
+B-201,sprocket,-2,6,1

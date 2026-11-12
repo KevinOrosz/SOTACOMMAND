@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: boot-restores-handoff
+expected_outcome: "The reply restores state from memory/HANDOFF.md in at most five lines, names the invoice export headline and the open header-order question, and waits for the owner instead of acting."
+context:
+  scaffold_script: place-files.sh

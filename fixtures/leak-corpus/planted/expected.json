@@ -1,0 +1,926 @@
+{
+  "schema_version": 1,
+  "description": "Every finding the leak gate must report in this planted corpus, as path (relative to planted/), line (1-based; 0 = the file path itself) and rule_id. All content is invented. The bench compares these with the gate's blocking findings as a multiset: anything missing lowers recall, anything extra counts as unexpected.",
+  "findings": [
+    {
+      "path": ".envrc",
+      "line": 0,
+      "rule_id": "env-file"
+    },
+    {
+      "path": ".envrc",
+      "line": 1,
+      "rule_id": "home-path"
+    },
+    {
+      "path": ".github/workflows/nightly.yml",
+      "line": 9,
+      "rule_id": "home-path"
+    },
+    {
+      "path": ".github/workflows/nightly.yml",
+      "line": 11,
+      "rule_id": "github-token"
+    },
+    {
+      "path": "AGENTS/SAGE/soul.md",
+      "line": 0,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/SAGE/soul.md",
+      "line": 1,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/SAGE/soul.md",
+      "line": 3,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/SAGE/soul.md",
+      "line": 3,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/EMBER/program.md",
+      "line": 0,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/EMBER/program.md",
+      "line": 1,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/EMBER/program.md",
+      "line": 3,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "AGENTS/EMBER/program.md",
+      "line": 3,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "KB/client-notes.md",
+      "line": 0,
+      "rule_id": "private-dir"
+    },
+    {
+      "path": "KB/client-notes.md",
+      "line": 3,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "README.md",
+      "line": 1,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "README.md",
+      "line": 3,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "README.md",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "README.md",
+      "line": 4,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "README.md",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "README.md",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "README.md",
+      "line": 6,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "README.md",
+      "line": 6,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "app/config.js",
+      "line": 2,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "app/config.js",
+      "line": 3,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "app/config.js",
+      "line": 4,
+      "rule_id": "jwt"
+    },
+    {
+      "path": "app/config.js",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "app/settings.toml",
+      "line": 3,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "app/settings.toml",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "clients/northwind.md",
+      "line": 1,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "clients/northwind.md",
+      "line": 3,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "clients/northwind.md",
+      "line": 3,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "clients/northwind.md",
+      "line": 4,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "clients/northwind.md",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 2,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 2,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 2,
+      "rule_id": "email"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 2,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 3,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 3,
+      "rule_id": "email"
+    },
+    {
+      "path": "clients/proposals.csv",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "config/.env.local",
+      "line": 0,
+      "rule_id": "env-file"
+    },
+    {
+      "path": "config/.env.local",
+      "line": 1,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "config/agents.yaml",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/agents.yaml",
+      "line": 4,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "config/agents.yaml",
+      "line": 6,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/agents.yaml",
+      "line": 7,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "config/models.json",
+      "line": 2,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/models.json",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/models.json",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/models.json",
+      "line": 5,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/models.json",
+      "line": 6,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 1,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 2,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 2,
+      "rule_id": "email"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 2,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 3,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "config/settings.yaml",
+      "line": 5,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "data/export.json",
+      "line": 2,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "data/export.json",
+      "line": 3,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "data/export.json",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "data/export.json",
+      "line": 5,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "data/people.yaml",
+      "line": 2,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "data/people.yaml",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "data/people.yaml",
+      "line": 4,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "data/people.yaml",
+      "line": 5,
+      "rule_id": "denylist-term"
+    },
+    {
+      "path": "data/people.yaml",
+      "line": 6,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/CODEOWNERS",
+      "line": 2,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "docs/about-the-owner.md",
+      "line": 3,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "docs/about-the-owner.md",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "docs/about-the-owner.md",
+      "line": 4,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "docs/about-the-owner.md",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "docs/aws-notes.md",
+      "line": 3,
+      "rule_id": "aws-access-key"
+    },
+    {
+      "path": "docs/house-rules.md",
+      "line": 3,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "docs/house-rules.md",
+      "line": 4,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "docs/house-rules.md",
+      "line": 4,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "docs/house-rules.md",
+      "line": 5,
+      "rule_id": "lesson-code"
+    },
+    {
+      "path": "docs/house-rules.md",
+      "line": 5,
+      "rule_id": "lesson-code"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 5,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/model-notes.md",
+      "line": 5,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 5,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 6,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 7,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/models-table.md",
+      "line": 8,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "docs/private-marker.md",
+      "line": 1,
+      "rule_id": "private-marker"
+    },
+    {
+      "path": "docs/private-marker.md",
+      "line": 3,
+      "rule_id": "private-marker"
+    },
+    {
+      "path": "docs/slack.md",
+      "line": 1,
+      "rule_id": "slack-token"
+    },
+    {
+      "path": "docs/status-log.md",
+      "line": 3,
+      "rule_id": "dated-ruling"
+    },
+    {
+      "path": "docs/status-log.md",
+      "line": 3,
+      "rule_id": "ordered-provenance"
+    },
+    {
+      "path": "docs/status-log.md",
+      "line": 4,
+      "rule_id": "dated-ruling"
+    },
+    {
+      "path": "docs/status-log.md",
+      "line": 5,
+      "rule_id": "dated-ruling"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 5,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 6,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 7,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 8,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 9,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/team-roster.md",
+      "line": 10,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/wrapped.md",
+      "line": 3,
+      "rule_id": "client-name"
+    },
+    {
+      "path": "docs/wrapped.md",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "docs/zero-width.md",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "docs/zero-width.md",
+      "line": 4,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "docs/zero-width.md",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "engine/hooks.sh",
+      "line": 3,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "engine/hooks.sh",
+      "line": 4,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "engine/roles.py",
+      "line": 4,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "engine/roles.py",
+      "line": 5,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "engine/roles.py",
+      "line": 6,
+      "rule_id": "persona-name"
+    },
+    {
+      "path": "engine/roles.py",
+      "line": 8,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "engine/roles.py",
+      "line": 8,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "evals/cases/basic/prompt.md",
+      "line": 4,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "evals/results/2026-10-30/transcript.md",
+      "line": 4,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "fixture-owner.md",
+      "line": 0,
+      "rule_id": "owner-fixture"
+    },
+    {
+      "path": "fixture-owner.md",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "internal/roadmap.md",
+      "line": 0,
+      "rule_id": "internal-dir"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 2,
+      "rule_id": "lesson-code"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 2,
+      "rule_id": "rule-code"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 3,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 3,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 4,
+      "rule_id": "dated-ruling"
+    },
+    {
+      "path": "logs/session.txt",
+      "line": 4,
+      "rule_id": "ordered-provenance"
+    },
+    {
+      "path": "memory/HANDOFF.md",
+      "line": 0,
+      "rule_id": "handoff-file"
+    },
+    {
+      "path": "memory/HANDOFF.md",
+      "line": 3,
+      "rule_id": "dated-ruling"
+    },
+    {
+      "path": "notes/codename.txt",
+      "line": 1,
+      "rule_id": "codename"
+    },
+    {
+      "path": "notes/codename.txt",
+      "line": 2,
+      "rule_id": "codename"
+    },
+    {
+      "path": "notes/codename.txt",
+      "line": 3,
+      "rule_id": "codename"
+    },
+    {
+      "path": "notes/collaborators.md",
+      "line": 3,
+      "rule_id": "denylist-term"
+    },
+    {
+      "path": "notes/collaborators.md",
+      "line": 4,
+      "rule_id": "denylist-term"
+    },
+    {
+      "path": "notes/collaborators.md",
+      "line": 5,
+      "rule_id": "denylist-term"
+    },
+    {
+      "path": "notes/env-names.md",
+      "line": 3,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "notes/env-names.md",
+      "line": 4,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "notes/env-names.md",
+      "line": 5,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "notes/env-names.md",
+      "line": 6,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "notes/fixture-intake.md",
+      "line": 0,
+      "rule_id": "owner-fixture"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 3,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 4,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 5,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 5,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 6,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 6,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 8,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "notes/hashed-names.md",
+      "line": 9,
+      "rule_id": "hashed-term"
+    },
+    {
+      "path": "ops/aws.ini",
+      "line": 2,
+      "rule_id": "aws-access-key"
+    },
+    {
+      "path": "ops/aws.ini",
+      "line": 3,
+      "rule_id": "aws-secret-key"
+    },
+    {
+      "path": "ops/ci-tokens.yaml",
+      "line": 2,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "ops/ci-tokens.yaml",
+      "line": 3,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "ops/ci-tokens.yaml",
+      "line": 4,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "ops/deploy-key.txt",
+      "line": 2,
+      "rule_id": "private-key"
+    },
+    {
+      "path": "output/weekly-report.md",
+      "line": 0,
+      "rule_id": "private-dir"
+    },
+    {
+      "path": "output/weekly-report.md",
+      "line": 3,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "package.json",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "package.json",
+      "line": 4,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "package.json",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "pyproject.toml",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "pyproject.toml",
+      "line": 4,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "pyproject.toml",
+      "line": 5,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "line": 3,
+      "rule_id": "github-token"
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "line": 4,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "scripts/deploy.sh",
+      "line": 5,
+      "rule_id": "email"
+    },
+    {
+      "path": "scripts/env-check.sh",
+      "line": 3,
+      "rule_id": "env-denylist"
+    },
+    {
+      "path": "scripts/env-check.sh",
+      "line": 4,
+      "rule_id": "denylist-term"
+    },
+    {
+      "path": "scripts/env-check.sh",
+      "line": 4,
+      "rule_id": "email"
+    },
+    {
+      "path": "scripts/keys.py",
+      "line": 2,
+      "rule_id": "private-key"
+    },
+    {
+      "path": "scripts/release.sh",
+      "line": 3,
+      "rule_id": "slack-token"
+    },
+    {
+      "path": "scripts/release.sh",
+      "line": 4,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "scripts/release.sh",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "scripts/sync.py",
+      "line": 4,
+      "rule_id": "api-key"
+    },
+    {
+      "path": "scripts/sync.py",
+      "line": 5,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "scripts/sync.py",
+      "line": 6,
+      "rule_id": "model-id"
+    },
+    {
+      "path": "site/index.html",
+      "line": 3,
+      "rule_id": "brand-name"
+    },
+    {
+      "path": "site/index.html",
+      "line": 5,
+      "rule_id": "email"
+    },
+    {
+      "path": "site/index.html",
+      "line": 5,
+      "rule_id": "owner-name"
+    },
+    {
+      "path": "tasks/lessons.md",
+      "line": 0,
+      "rule_id": "private-dir"
+    },
+    {
+      "path": "tasks/lessons.md",
+      "line": 3,
+      "rule_id": "lesson-code"
+    },
+    {
+      "path": "tools/backup.py",
+      "line": 4,
+      "rule_id": "windows-home-path"
+    },
+    {
+      "path": "tools/backup.py",
+      "line": 5,
+      "rule_id": "windows-home-path"
+    },
+    {
+      "path": "tools/backup.py",
+      "line": 6,
+      "rule_id": "home-path"
+    },
+    {
+      "path": "windows/setup.bat",
+      "line": 3,
+      "rule_id": "windows-home-path"
+    },
+    {
+      "path": "windows/setup.bat",
+      "line": 4,
+      "rule_id": "windows-home-path"
+    }
+  ]
+}

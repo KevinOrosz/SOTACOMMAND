@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: changelog-new-file
+expected_outcome: "CHANGELOG.md is created with the Keep a Changelog introduction and one Fixed bullet under Unreleased that ends with (#42)."
+context:
+  scaffold_script: place-files.sh

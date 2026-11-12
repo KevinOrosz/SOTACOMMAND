@@ -1,0 +1,110 @@
+# Validate every Claude Code plugin in this repository, and the marketplace,
+# with the CLI's own validator in strict mode, so warnings fail the check too.
+#
+# Targets: engine/, each folder under packs/ and labs/ (found by
+# .github/scripts/plugins.py, which also fails if one has no
+# .claude-plugin/plugin.json), and the repository root once
+# .claude-plugin/marketplace.json exists. A marketplace run doesn't open the
+# listed plugins' files, so each plugin is validated on its own as well.
+#
+# The CLI version is pinned so results don't change under us. Bump
+# CLAUDE_CODE_VERSION on purpose, in its own pull request.
+name: Validate plugins
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CLAUDE_CODE_VERSION: "2.1.318"
+  # Keep the pinned CLI from updating itself or calling home during the run.
+  DISABLE_UPDATES: "1"
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+
+jobs:
+  validate:
+    name: Plugin validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Find plugin directories and the marketplace
+        id: find
+        run: |
+          targets="$RUNNER_TEMP/validate-targets.txt"
+          python3 .github/scripts/plugins.py list --require-manifest > "$targets"
+          if [ -f .claude-plugin/marketplace.json ]; then
+            echo "." >> "$targets"
+          fi
+          count="$(grep -c . "$targets" || true)"
+          {
+            echo "count=$count"
+            echo "targets=$targets"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$count" -eq 0 ]; then
+            echo "::notice::No plugin directory (engine/, packs/*/, labs/*/) and no .claude-plugin/marketplace.json yet; nothing to validate."
+          else
+            echo "Targets to validate:"
+            cat "$targets"
+          fi
+
+      - name: Set up Node.js
+        if: steps.find.outputs.count != '0'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Install Claude Code ${{ env.CLAUDE_CODE_VERSION }}
+        if: steps.find.outputs.count != '0'
+        run: |
+          npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+          claude --version
+
+      - name: claude plugin validate --strict
+        if: steps.find.outputs.count != '0'
+        env:
+          TARGETS: ${{ steps.find.outputs.targets }}
+        run: |
+          mapfile -t targets < "$TARGETS"
+          failed=0
+          rows=""
+          for target in "${targets[@]}"; do
+            echo "::group::claude plugin validate --strict $target"
+            if claude plugin validate --strict "$target" < /dev/null; then
+              result="pass"
+            else
+              result="FAIL"
+              failed=$((failed + 1))
+              echo "::error::claude plugin validate --strict failed for $target"
+            fi
+            echo "::endgroup::"
+            rows+="| ${target} | ${result} |"$'\n'
+          done
+          {
+            echo "### Plugin validation (Claude Code ${CLAUDE_CODE_VERSION}, --strict)"
+            echo
+            echo "| Target | Result |"
+            echo "| --- | --- |"
+            printf '%s' "$rows"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::${failed} of ${#targets[@]} targets failed strict validation."
+            exit 1
+          fi

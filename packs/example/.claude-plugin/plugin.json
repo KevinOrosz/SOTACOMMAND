@@ -1,0 +1,10 @@
+{
+  "name": "example-pack",
+  "version": "0.1.0",
+  "description": "Two small skills with deterministic outputs, a CSV summary and a Keep a Changelog entry, that exercise the skills toolchain end to end: lint, eval cases, redacted results and the registry.",
+  "author": {
+    "name": "SOTACOMMAND"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["example", "csv", "changelog", "evals"]
+}

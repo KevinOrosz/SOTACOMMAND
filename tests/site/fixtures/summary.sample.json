@@ -1,0 +1,85 @@
+{
+  "_sample": "SYNTHETIC SAMPLE for tests/site. Every number here is invented; this is not an eval result.",
+  "summaryFormat": 1,
+  "schemaVersion": 1,
+  "claudeVersion": "2.1.318",
+  "startedAt": "2026-11-01T09:30:00.000Z",
+  "date": "2026-11-01",
+  "durationSeconds": 538,
+  "costUsd": 2.41,
+  "partial": false,
+  "suite": {
+    "ablation": "with-without",
+    "threshold": 0.8,
+    "modelPinned": true,
+    "judgeModelPinned": true,
+    "plugins": [
+      {
+        "name": "sample-pack",
+        "version": "0.1.0"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "name": "release-notes-basic",
+      "skill": "release-notes",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.93, "scoreWithout": 0.46, "delta": 0.47 }
+    },
+    {
+      "name": "release-notes-breaking-change",
+      "skill": "release-notes",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.87, "scoreWithout": 0.54, "delta": 0.33 }
+    },
+    {
+      "name": "release-notes-empty-history",
+      "skill": "release-notes",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.9, "scoreWithout": 0.5, "delta": 0.4 }
+    },
+    {
+      "name": "report-digest-weekly",
+      "skill": "report-digest",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.83, "scoreWithout": 0.66, "delta": 0.17 }
+    },
+    {
+      "name": "report-digest-empty-input",
+      "skill": "report-digest",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.67, "scoreWithout": 0.74, "delta": -0.07 }
+    },
+    {
+      "name": "report-digest-long-thread",
+      "skill": "report-digest",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.75, "scoreWithout": 0.7, "delta": 0.05 }
+    },
+    {
+      "name": "inbox-triage-priority",
+      "skill": "inbox-triage",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.5, "scoreWithout": 0.5, "delta": 0.0 }
+    },
+    {
+      "name": "inbox-triage-spam",
+      "skill": "inbox-triage",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.42, "scoreWithout": 0.58, "delta": -0.16 }
+    },
+    {
+      "name": "inbox-triage-vacation",
+      "skill": "inbox-triage",
+      "runsPerCase": 3,
+      "aggregates": { "score": 0.46, "scoreWithout": 0.54, "delta": -0.08 }
+    }
+  ],
+  "aggregates": {
+    "casesTotal": 9,
+    "casesPassed": 4,
+    "overallScore": 0.7033333333333334,
+    "meanDelta": 0.12333333333333335
+  }
+}

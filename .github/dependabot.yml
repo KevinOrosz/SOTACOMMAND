@@ -1,0 +1,24 @@
+# Dependabot keeps the SHA-pinned GitHub Actions current: it bumps the SHA and
+# its version comment together, in one grouped pull request a week.
+#
+# The tools are standard-library Python, so Actions is the only ecosystem.
+# Versions pinned inside workflow steps aren't seen by Dependabot and are
+# bumped by hand: CLAUDE_CODE_VERSION (validate.yml), GITLEAKS_VERSION and
+# ACTIONLINT_REF (ci.yml).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Wait a week after a release before proposing it, so a bad or compromised
+    # release has time to be caught. Security updates skip the wait.
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+    open-pull-requests-limit: 5

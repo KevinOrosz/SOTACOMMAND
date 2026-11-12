@@ -1,0 +1,74 @@
+{
+  "$comment": "The WIZARD interview. One source for the terminal interview (wizard.py interview), for agents (wizard.py questions) and for the docs. Plain words only: the reader may never have used an AI agent.",
+  "helpers": [
+    {"id": "builder", "name": "the Builder", "does": "writes and fixes code, websites and automations", "first_job": "Builder: make a simple one-page website for {project}."},
+    {"id": "researcher", "name": "the Researcher", "does": "looks things up, compares options and writes you a plan", "first_job": "Researcher: find five problems {audience} have that {project} could solve, with sources."},
+    {"id": "owner-auditor", "name": "the Time-Keeper", "does": "tracks how much of your time the team uses, and the one fix that saves you the most", "first_job": "Time-Keeper: run the owner-auditor for this week."},
+    {"id": "sensor", "name": "the Listener", "does": "reads what people say about your work (comments, reviews, threads) and tells you what they want. It never replies or posts", "first_job": "Listener: read what {audience} say about work like {project} and tell me what they ask for most."},
+    {"id": "repurposer", "name": "the Writer", "does": "turns one piece you approved into drafts for other places, in your voice. It never posts anything", "first_job": "Writer: turn this approved piece into three short drafts in my voice."}
+  ],
+  "recommended_helpers": {
+    "business": ["builder", "researcher", "owner-auditor", "sensor", "repurposer"],
+    "creator": ["researcher", "owner-auditor", "sensor", "repurposer"],
+    "artist": ["researcher", "owner-auditor", "repurposer"],
+    "software": ["builder", "researcher", "owner-auditor"],
+    "other": ["builder", "researcher", "owner-auditor", "sensor", "repurposer"]
+  },
+  "questions": [
+    {"id": "name", "type": "text", "required": true,
+     "ask": "What should your team call you?",
+     "example": "Sam"},
+    {"id": "project", "type": "text", "required": true,
+     "ask": "What is the name of your brand, business or art project?",
+     "example": "Sam's Bakery"},
+    {"id": "kind", "type": "choice", "required": true, "default": "business",
+     "ask": "Which one fits best?",
+     "choices": [
+       {"id": "business", "label": "A business or shop"},
+       {"id": "creator", "label": "A personal brand or content creator"},
+       {"id": "artist", "label": "An artist, musician or writer"},
+       {"id": "software", "label": "A software or app project"},
+       {"id": "other", "label": "Something else"}
+     ]},
+    {"id": "what", "type": "text", "required": true,
+     "ask": "In one or two sentences, what do you make or do?",
+     "example": "We bake sourdough bread and sell it at two weekend markets."},
+    {"id": "audience", "type": "text", "required": false, "default": "your audience",
+     "ask": "Who is it for?",
+     "example": "Busy families near the market who want real bread."},
+    {"id": "goals", "type": "list", "required": false,
+     "ask": "What are the top one to three things you want help with right now? Separate them with commas.",
+     "example": "an online order page, more people at the Saturday market, a weekly newsletter"},
+    {"id": "voice", "type": "text", "required": false, "default": "clear, friendly, honest",
+     "ask": "When your team writes for you, how should it sound? Give about three words.",
+     "example": "warm, direct, a little funny"},
+    {"id": "never", "type": "list", "required": false,
+     "ask": "Is there anything your team must never do or say? Separate with commas, or leave it empty.",
+     "example": "never promise delivery dates, never mention prices without asking me"},
+    {"id": "approval", "type": "text", "required": false, "default": "Anything that gets published, sent to someone, or costs money.",
+     "ask": "What must always get your OK first?",
+     "example": "Anything that gets published, sent to someone, or costs money."},
+    {"id": "helpers", "type": "multi", "required": false,
+     "ask": "Which helpers do you want on your team? You can change this later.",
+     "choices_from": "helpers"},
+    {"id": "tool", "type": "choice", "required": false, "default": "other",
+     "ask": "Which AI app will you use your team in?",
+     "choices": [
+       {"id": "claude", "label": "Claude Code"},
+       {"id": "codex", "label": "Codex"},
+       {"id": "cursor", "label": "Cursor"},
+       {"id": "copilot", "label": "GitHub Copilot (in VS Code)"},
+       {"id": "gemini", "label": "Gemini CLI"},
+       {"id": "hermes", "label": "Hermes Agent"},
+       {"id": "chat", "label": "A chat app that can't open folders (like a chat website)"},
+       {"id": "other", "label": "Another one, or I'm not sure yet"}
+     ]},
+    {"id": "second_brain", "type": "choice", "required": false, "default": "later",
+     "ask": "Do you also want a long-term memory for your team (a 'second brain': a private notebook of everything it learns)?",
+     "choices": [
+       {"id": "yes", "label": "Yes, show me how to add it"},
+       {"id": "later", "label": "Not now"}
+     ]}
+  ],
+  "focus_question": "What is the first job you would hand to {name}? (It {does}.)"
+}

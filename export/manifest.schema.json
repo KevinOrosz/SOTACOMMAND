@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Extraction manifest",
+  "description": "Allowlist manifest for tools/repo/extract/extract.py. Only the files listed under files ever leave the source tree. The tool validates every rule here and more (each regex compiles, each from exists, SKILL.md targets convert their frontmatter); see tools/repo/extract/README.md.",
+  "type": "object",
+  "required": ["schema_version", "files"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional path to this schema, so editors can validate the manifest. The tool ignores it."
+    },
+    "schema_version": {
+      "const": "1",
+      "description": "Manifest format version. Always the string \"1\"."
+    },
+    "description": {
+      "type": "string",
+      "description": "Free text for the people reading the manifest."
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Applies to every entry that doesn't set its own value.",
+      "properties": {
+        "rewrites": {
+          "$ref": "#/$defs/rewrites",
+          "description": "Rule sets for entries without their own rewrites list. When omitted: every rule set except frontmatter."
+        }
+      }
+    },
+    "persona_map": {
+      "type": "object",
+      "description": "Persona display name -> functional role id. Matched case-sensitively as a whole word. A persona name left in the output (for example inside an identifier) is flagged.",
+      "propertyNames": {"$ref": "#/$defs/term"},
+      "additionalProperties": {"$ref": "#/$defs/roleId"}
+    },
+    "owner_terms": {
+      "type": "object",
+      "description": "Owner name, nickname or address -> neutral replacement, usually \"the owner\". Matched as a whole word, longest term first. The exact case and the ALL-CAPS form are rewritten (capitalized at a sentence start); any other case variant is flagged. Every term must also be caught by the leak gate, or the run fails closed.",
+      "propertyNames": {"$ref": "#/$defs/term"},
+      "additionalProperties": {"type": "string"}
+    },
+    "path_map": {
+      "type": "object",
+      "description": "Path prefix -> replacement prefix. A key starting with ~/ matches any home directory: a macOS or Linux home path, ~/, $HOME/ or ${HOME}/. Absolute and home keys apply first, then relative keys; the longest key wins. Any home-directory path left afterwards is flagged.",
+      "propertyNames": {"$ref": "#/$defs/term"},
+      "additionalProperties": {"type": "string"}
+    },
+    "rewrite_patterns": {
+      "type": "array",
+      "description": "Safe regular-expression rewrites, applied in order to each line. Use them only where the result is always right; anything that needs judgment belongs in flag_patterns.",
+      "items": {"$ref": "#/$defs/rewritePattern"}
+    },
+    "drop_patterns": {
+      "type": "array",
+      "description": "Lines or blocks removed from every entry that applies drop_patterns.",
+      "items": {"$ref": "#/$defs/globalDrop"}
+    },
+    "flag_patterns": {
+      "type": "array",
+      "description": "Text no rule can rewrite safely, such as model names, mythic framing and client names. Any match left in the output is a flag, and every flag blocks the run.",
+      "items": {"$ref": "#/$defs/flagPattern"}
+    },
+    "never_export": {
+      "type": "array",
+      "description": "Gitignore-style globs, matched case-insensitively against each entry's from. A match is a manifest error. A pattern without a slash matches a name at any depth.",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "frontmatter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How the frontmatter rewrite converts old skill frontmatter to the portable Agent Skills format.",
+      "properties": {
+        "drop_keys": {
+          "type": "array",
+          "description": "Old keys to drop instead of moving them under metadata.",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "rename_keys": {
+          "type": "object",
+          "description": "Old key -> new key, applied before keys are lowercased and underscores become hyphens.",
+          "additionalProperties": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+        },
+        "list_separator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Joins list values into one metadata string. Default \", \"."
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Role frontmatter (adapters/ROLES.md) for each engine/roles/<id>/soul.md target. The tool writes the block; the source file must not carry one.",
+      "propertyNames": {"$ref": "#/$defs/roleId"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "tier"],
+        "properties": {
+          "description": {"type": "string", "minLength": 1, "description": "At most 1024 characters."},
+          "tier": {"enum": ["low", "mid", "high"], "description": "A capability tier, never a model name."},
+          "main": {"type": "boolean"},
+          "isolation": {"enum": ["worktree", "none"]},
+          "allowed-tools": {"type": "string", "minLength": 1},
+          "disallowed-tools": {"type": "string", "minLength": 1},
+          "write-paths": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "plugins": {
+      "type": "object",
+      "description": "Plugin folders to generate .claude-plugin/plugin.json and README.md for. Each needs at least one skill under <folder>/skills/.",
+      "propertyNames": {"pattern": "^(?:packs|labs)/[a-z0-9]+(?:-[a-z0-9]+)*$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "description"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "description": {"type": "string", "minLength": 1},
+          "version": {"type": "string", "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)$", "default": "0.1.0"}
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "description": "The allowlist. Each entry copies one source file to one target path.",
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "rewrites": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Rule sets to apply. They always run in this order: drop_patterns, rewrite_patterns, path_map, owner_terms, persona_map, then frontmatter.",
+      "items": {
+        "enum": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"]
+      }
+    },
+    "term": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "Non-empty, single line, no leading or trailing whitespace."
+    },
+    "roleId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "description": "A functional role id in kebab-case, such as owner-auditor."
+    },
+    "ruleId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Lowercase id shown in the report."
+    },
+    "regex": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Python regular expression, applied to one line at a time. Inline flags such as (?i) go first. It must not match an empty string."
+    },
+    "relPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:)(?!(?:.*/)?\\.\\.?(?:/|$))[^/\\\\]+(?:/[^/\\\\]+)*$",
+      "description": "Relative POSIX path: no leading slash, no backslash, no drive letter, no . or .. segments, no empty segments."
+    },
+    "rewritePattern": {
+      "type": "object",
+      "required": ["id", "pattern", "replace"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/ruleId"},
+        "pattern": {"$ref": "#/$defs/regex"},
+        "replace": {
+          "type": "string",
+          "description": "Python replacement template; \\1 and \\g<name> refer to groups. It must not insert line breaks."
+        },
+        "description": {"type": "string"}
+      }
+    },
+    "dropFields": {
+      "type": "object",
+      "properties": {
+        "id": {"$ref": "#/$defs/ruleId"},
+        "pattern": {"$ref": "#/$defs/regex", "description": "Drop every line this matches."},
+        "start": {"$ref": "#/$defs/regex", "description": "Drop a block starting at the first line this matches."},
+        "end": {"$ref": "#/$defs/regex", "description": "The block ends at, and includes, the next line this matches. If none does, that is a flag."},
+        "before": {"$ref": "#/$defs/regex", "description": "The block ends just before the next line this matches, or at the end of the file."},
+        "description": {"type": "string"},
+        "reason": {"type": "string"}
+      },
+      "additionalProperties": false,
+      "oneOf": [
+        {"required": ["pattern"]},
+        {"required": ["start", "end"]},
+        {"required": ["start", "before"]}
+      ],
+      "dependentRequired": {"end": ["start"], "before": ["start"]}
+    },
+    "globalDrop": {
+      "allOf": [{"$ref": "#/$defs/dropFields"}, {"required": ["id"]}]
+    },
+    "flagPattern": {
+      "type": "object",
+      "required": ["id", "pattern"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "allOf": [
+            {"$ref": "#/$defs/ruleId"},
+            {
+              "not": {
+                "enum": [
+                  "persona-name", "owner-term", "home-path", "not-utf8", "binary-content",
+                  "unterminated-block", "select-not-found", "unterminated-select",
+                  "frontmatter-missing", "frontmatter-syntax", "frontmatter-description",
+                  "frontmatter-field", "frontmatter-key", "frontmatter-role",
+                  "role-source-frontmatter"
+                ]
+              }
+            }
+          ],
+          "description": "Must not reuse an id the tool raises itself."
+        },
+        "pattern": {"$ref": "#/$defs/regex"},
+        "description": {"type": "string", "description": "Shown in the report next to each match."}
+      }
+    },
+    "replaceRule": {
+      "type": "object",
+      "required": ["find", "with"],
+      "additionalProperties": false,
+      "description": "Entry-scoped replacement, written after reading the report. It runs before every other in-line rule, on the source text.",
+      "properties": {
+        "find": {"type": "string", "minLength": 1, "description": "Exact text, or a Python regex when regex is true. Single line."},
+        "with": {"type": "string", "description": "Replacement text, or a template when regex is true. Single line."},
+        "regex": {"type": "boolean", "description": "Treat find as a regular expression. Default false."},
+        "reason": {"type": "string"}
+      }
+    },
+    "select": {
+      "type": "object",
+      "required": ["start"],
+      "additionalProperties": false,
+      "description": "Export only one block of the source, for example one section of a long file.",
+      "properties": {
+        "start": {"$ref": "#/$defs/regex"},
+        "end": {"$ref": "#/$defs/regex"},
+        "before": {"$ref": "#/$defs/regex"}
+      },
+      "oneOf": [{"required": ["end"]}, {"required": ["before"]}]
+    },
+    "entry": {
+      "type": "object",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {"$ref": "#/$defs/relPath", "description": "Source file, relative to --source, in exact letter case."},
+        "to": {
+          "allOf": [
+            {"$ref": "#/$defs/relPath"},
+            {"not": {"pattern": "^[Ii][Nn][Tt][Ee][Rr][Nn][Aa][Ll](?:/|$)"}},
+            {"not": {"pattern": "(?:^|/)\\.[Gg][Ii][Tt](?:/|$)"}}
+          ],
+          "description": "Target path inside --out. Unique, ignoring letter case. Never under internal/ or .git. A .../<skill>/SKILL.md target must apply the frontmatter rewrite."
+        },
+        "rewrites": {"$ref": "#/$defs/rewrites"},
+        "replace": {"type": "array", "items": {"$ref": "#/$defs/replaceRule"}},
+        "drop": {"type": "array", "items": {"$ref": "#/$defs/dropFields"}},
+        "select": {"$ref": "#/$defs/select"},
+        "binary": {"type": "boolean", "description": "Copy the bytes verbatim, with no rewrites or flag checks. The leak gate still scans the file."},
+        "note": {"type": "string", "description": "Shown in the report under the file."}
+      }
+    }
+  }
+}

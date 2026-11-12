@@ -1,0 +1,81 @@
+# CodeQL code scanning for the Python tools (advanced setup: keep GitHub's
+# "default setup" off for this repository, or the two will conflict).
+#
+# Code scanning is free on public repositories. A user-owned private
+# repository can't use it, and an organization's private repository needs
+# GitHub Code Security, so the first job checks the repository's visibility
+# and the analysis runs only when it is public, or when the repository
+# variable CODE_SCANNING_ON_PRIVATE is "true" because Code Security is on.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "27 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  availability:
+    name: Code scanning availability
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check repository visibility
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPT_IN: ${{ vars.CODE_SCANNING_ON_PRIVATE }}
+        run: |
+          visibility="$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.visibility')"
+          echo "Repository visibility: ${visibility}"
+          if [ "$visibility" = "public" ] || [ "$OPT_IN" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping CodeQL: code scanning needs a public repository, or GitHub Code Security plus the repository variable CODE_SCANNING_ON_PRIVATE=true."
+          fi
+
+  analyze:
+    name: Analyze (python)
+    needs: availability
+    if: needs.availability.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      # Needed only on private repositories, to read workflow run details.
+      actions: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: python
+          build-mode: none
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:python

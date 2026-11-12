@@ -1,0 +1,71 @@
+name: Harness support
+description: Ask for support for another agent harness, or report a problem with an adapter.
+title: "[harness] "
+labels: [enhancement, harness]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The engine is written once, as `AGENTS.md` plus Agent Skills. Adapters generate what each
+        harness reads:
+
+        - Claude Code: a plugin.
+        - Codex: `AGENTS.md` and `.agents/skills/`.
+        - GitHub Copilot: `.github/agents/`.
+
+        Cursor and Gemini CLI are planned.
+
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness
+      options:
+        - Claude Code
+        - Codex
+        - GitHub Copilot
+        - Cursor
+        - Gemini CLI
+        - Another harness
+    validations:
+      required: true
+
+  - type: input
+    id: harness-version
+    attributes:
+      label: Harness version
+      placeholder: "1.4.2"
+
+  - type: dropdown
+    id: request
+    attributes:
+      label: What do you need?
+      options:
+        - Support for a harness that has no adapter yet
+        - A fix to an existing adapter's output
+        - Docs for using a harness
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you tried, what the harness did, and what you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: formats
+    attributes:
+      label: Where does this harness read instructions, skills and agents?
+      description: |
+        The files and folders it loads (for example `AGENTS.md`, a skills folder, agent
+        profiles), with links to its official docs. Adapters follow official formats only.
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed names, email addresses, home-directory paths, keys and tokens from everything above.
+          required: true

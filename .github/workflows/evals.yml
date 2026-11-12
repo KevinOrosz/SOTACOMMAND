@@ -1,0 +1,179 @@
+# Eval suites for the skill packs, run with `claude plugin eval`.
+#
+# - Pull requests that touch engine/**, packs/** or labs/**: only the changed plugins,
+#   one arm (--ablation none), so the run stays cheap and fast.
+# - workflow_dispatch and release tags: every plugin, two arms
+#   (--ablation with-without), which reports each skill's delta against a
+#   no-plugin baseline. Commit the redacted summary from a run like this one
+#   to qualify a skill as stable (see tools/repo/skills/CONTRACT.md).
+#
+# Repository settings this workflow reads (Settings > Secrets and variables > Actions):
+#   secret   ANTHROPIC_API_KEY    without it (forks, unconfigured repos) the job skips with a notice
+#   variable EVAL_MODEL           model under test, passed as --model (required)
+#   variable EVAL_JUDGE_MODEL     model for llm graders, passed as --judge-model (required)
+#   variable EVAL_MAX_COST_PR     USD ceiling per plugin on pull requests (default 2)
+#   variable EVAL_MAX_COST_FULL   USD ceiling per plugin on full runs (default 20)
+#
+# No model name is ever written in this file. Raw results hold model
+# identifiers and transcripts, so they stay on the runner. Only the redacted
+# summaries are uploaded.
+#
+# --scaffold runs each case's place-files.sh on the runner. Secrets never reach
+# pull requests from forks, and anyone who can push a branch here can already
+# edit this workflow, so the scaffold adds no new trust boundary.
+name: evals
+
+on:
+  pull_request:
+    paths:
+      - "packs/**"
+      - "labs/**"
+      - "engine/**"
+      - ".github/workflows/evals.yml"
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+      - "*--v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Bump on purpose, in its own pull request, together with validate.yml.
+  CLAUDE_CODE_VERSION: "2.1.318"
+  DISABLE_UPDATES: "1"
+  DISABLE_AUTOUPDATER: "1"
+
+jobs:
+  evals:
+    name: claude plugin eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      HAS_API_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - name: Skip without an API key
+        if: env.HAS_API_KEY != 'true'
+        run: echo "::notice title=Evals skipped::The ANTHROPIC_API_KEY secret isn't available to this run (a fork or an unconfigured repository), so no eval ran."
+
+      - name: Check the eval variables
+        if: env.HAS_API_KEY == 'true'
+        env:
+          EVAL_MODEL: ${{ vars.EVAL_MODEL }}
+          EVAL_JUDGE_MODEL: ${{ vars.EVAL_JUDGE_MODEL }}
+        run: |
+          missing=""
+          [ -n "$EVAL_MODEL" ] || missing="$missing EVAL_MODEL"
+          [ -n "$EVAL_JUDGE_MODEL" ] || missing="$missing EVAL_JUDGE_MODEL"
+          if [ -n "$missing" ]; then
+            echo "::error title=Evals misconfigured::Set the repository variable(s)$missing. Evals pin both models so scores stay comparable across runs."
+            exit 1
+          fi
+
+      - name: Check out
+        if: env.HAS_API_KEY == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        if: env.HAS_API_KEY == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install Claude Code ${{ env.CLAUDE_CODE_VERSION }}
+        if: env.HAS_API_KEY == 'true'
+        run: |
+          npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+          claude --version
+
+      - name: Select plugins
+        id: select
+        if: env.HAS_API_KEY == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git diff --name-only "$BASE_SHA" HEAD -- engine packs labs > "$RUNNER_TEMP/changed-files.txt"
+            plugins="$(python3 tools/repo/skills/skills.py plugins --changed-files "$RUNNER_TEMP/changed-files.txt")"
+            echo "ablation=none" >> "$GITHUB_OUTPUT"
+          else
+            plugins="$(python3 tools/repo/skills/skills.py plugins)"
+            echo "ablation=with-without" >> "$GITHUB_OUTPUT"
+          fi
+          printf '%s\n' "$plugins" > "$RUNNER_TEMP/plugins.txt"
+          if [ -z "$plugins" ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "::notice title=No plugins to evaluate::No plugin under engine/, packs/ or labs/ changed."
+          else
+            echo "count=$(printf '%s\n' "$plugins" | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
+            echo "Plugins to evaluate:"
+            printf '%s\n' "$plugins"
+          fi
+
+      - name: Run evals
+        if: env.HAS_API_KEY == 'true' && steps.select.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_MODEL: ${{ vars.EVAL_MODEL }}
+          EVAL_JUDGE_MODEL: ${{ vars.EVAL_JUDGE_MODEL }}
+          ABLATION: ${{ steps.select.outputs.ablation }}
+          MAX_COST_PR: ${{ vars.EVAL_MAX_COST_PR || '2' }}
+          MAX_COST_FULL: ${{ vars.EVAL_MAX_COST_FULL || '20' }}
+        run: |
+          if [ "$ABLATION" = "none" ]; then max_cost="$MAX_COST_PR"; else max_cost="$MAX_COST_FULL"; fi
+          raw="$RUNNER_TEMP/eval-raw"
+          summaries="$RUNNER_TEMP/eval-summaries"
+          mkdir -p "$raw" "$summaries"
+          echo "## Plugin evals (Claude Code ${CLAUDE_CODE_VERSION}, --ablation ${ABLATION})" >> "$GITHUB_STEP_SUMMARY"
+          status=0
+          while IFS= read -r plugin; do
+            [ -n "$plugin" ] || continue
+            name="$(basename "$plugin")"
+            echo "::group::claude plugin eval $plugin"
+            code=0
+            claude plugin eval "$plugin" \
+              --ablation "$ABLATION" \
+              --threshold 0.8 \
+              --trust-plugin \
+              --no-publish \
+              --scaffold \
+              --max-cost-usd "$max_cost" \
+              --model "$EVAL_MODEL" \
+              --judge-model "$EVAL_JUDGE_MODEL" \
+              --output-dir "$raw/$name" \
+              --json "$raw/$name/results.json" \
+              --allow-tools Write Edit || code=$?
+            echo "::endgroup::"
+            echo "### $plugin" >> "$GITHUB_STEP_SUMMARY"
+            if [ -f "$raw/$name/results.json" ]; then
+              python3 tools/repo/skills/skills.py redact-results "$raw/$name/results.json" \
+                --out "$summaries/$name/summary.json" >> "$GITHUB_STEP_SUMMARY" || code=1
+            else
+              echo "No result document was written." >> "$GITHUB_STEP_SUMMARY"
+            fi
+            case "$code" in
+              0) ;;
+              2) echo "::error title=Evals partial::$plugin stopped early (cost ceiling or credential); see the job summary."; status=1 ;;
+              *) echo "::error title=Evals failed::$plugin exited $code: a case scored below 0.8 or failed to run."; status=1 ;;
+            esac
+          done < "$RUNNER_TEMP/plugins.txt"
+          exit "$status"
+
+      - name: Upload redacted summaries
+        if: always() && env.HAS_API_KEY == 'true' && steps.select.outputs.count != '0'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: eval-summaries
+          path: ${{ runner.temp }}/eval-summaries
+          if-no-files-found: ignore
+          retention-days: 30

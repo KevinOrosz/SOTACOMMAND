@@ -1,0 +1,11 @@
+name: nightly
+on:
+  schedule:
+    - cron: "17 3 * * *"
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - run: rsync -a /home/avery/vault/ backup:/vault/
+        env:
+          TOKEN: ghs_PLANTEDplantedPLANTEDplantedPLANTEDp

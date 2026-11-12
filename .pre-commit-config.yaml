@@ -1,0 +1,30 @@
+# pre-commit hooks for this repository. Install once with:
+#   pipx install pre-commit   (or: python3 -m pip install --user pre-commit)
+#   pre-commit install
+#
+# Both hooks run the repository's own stdlib leak gate with the system Python,
+# so they need no network access and no extra dependencies.
+#
+# To commit a deliberate change to a path the gate blocks (for example the
+# private staging folder internal/), skip this hook for that one commit:
+#   SKIP=leakgate git commit ...
+repos:
+  - repo: local
+    hooks:
+      - id: leakgate
+        name: leakgate (private-material leak gate)
+        description: Block staged files that leak names, home paths, secrets, house rule codes or model identifiers.
+        entry: python3 tools/repo/leakgate/leakgate.py check
+        language: system
+        pass_filenames: true
+        require_serial: false
+        # Synthetic leak fixtures. Planted leaks are verified by the bench below,
+        # which fails on any finding there that expected.json doesn't declare.
+        exclude: ^fixtures/(leak-corpus/(planted|samples)|fake-command)/
+      - id: leakgate-bench
+        name: leakgate bench (recall and false blocks)
+        description: Re-measure recall and false blocks whenever the gate or its corpora change.
+        entry: python3 tools/repo/leakgate/leakgate.py bench
+        language: system
+        pass_filenames: false
+        files: ^(tools/repo/leakgate/|fixtures/leak-corpus/)

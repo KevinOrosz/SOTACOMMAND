@@ -1,0 +1,7 @@
+agents:
+  orchestrator:
+    model: claude-opus-4-5   # pinned by the owner
+    notes: "see Rule 9"
+  sensor:
+    model: grok-4
+    home: /home/avery/agents

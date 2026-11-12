@@ -1,0 +1,8 @@
+[project]
+name = "sotacommand"
+version = "1.4.2"
+maintainers = ["maintainers@example.org"]
+
+[memory]
+handoff_lines = 15
+lessons_cap = 12

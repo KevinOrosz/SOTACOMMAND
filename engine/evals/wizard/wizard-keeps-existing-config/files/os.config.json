@@ -1,0 +1,6 @@
+{
+  "owner_note": "keep me exactly as written",
+  "memory_caps": [
+    {"path": "memory/HANDOFF.md", "max_lines": 15}
+  ]
+}

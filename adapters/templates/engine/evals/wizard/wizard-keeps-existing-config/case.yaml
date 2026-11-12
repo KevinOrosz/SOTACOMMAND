@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: wizard-keeps-existing-config
+expected_outcome: "The owner's existing os.config.json is left byte-for-byte unchanged; the missing memory files are created."
+context:
+  scaffold_script: place-files.sh

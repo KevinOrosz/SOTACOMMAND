@@ -1,0 +1,5 @@
+# The real manifest names private terms (owner, clients, personas, paths).
+# Keep it outside the repository, or under internal/, and never commit it here.
+manifest.json
+*.local.json
+reports/

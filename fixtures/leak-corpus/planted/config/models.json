@@ -1,0 +1,7 @@
+{
+  "orchestrator": "claude-opus-4-5",
+  "sensor": "claude-sonnet-4-5-20250929",
+  "fallback": "gpt-4o-mini",
+  "vision": "gemini-2.5-flash",
+  "bedrock": "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+}

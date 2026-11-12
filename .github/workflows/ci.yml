@@ -1,0 +1,317 @@
+# CI for every pull request and every push to main.
+#
+# - test: byte-compile and unit tests on Linux and macOS, with the oldest and
+#   newest supported Python, then each tool's own drift or lint check.
+# - windows: what a Windows user runs (the wizard, the AGENTS.md install and
+#   the session-open report), on Windows with the newest supported Python.
+# - leak-gate: the leak gate over every tracked file, plus its benchmark.
+# - secrets: gitleaks over the commits in the change.
+# - actionlint: lints these workflow files, shell scripts included.
+# - ci-result: one summary check for branch rules (see .github/rulesets.md).
+#
+# Each tool check runs only once its script is in the branch, so a pull
+# request can go green before the tool it depends on has landed.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test (${{ matrix.runner || matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.runner || matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.9", "3.12"]
+        include:
+          # Python 3.9 is past end of life and has no build for Ubuntu 26.04,
+          # so this cell stays on 24.04 when ubuntu-latest moves on.
+          - os: ubuntu-latest
+            python: "3.9"
+            runner: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Byte-compile every tool (syntax check)
+        run: |
+          set --
+          for dir in tools adapters engine tests .github/scripts; do
+            if [ -d "$dir" ]; then
+              set -- "$@" "$dir"
+            fi
+          done
+          if [ "$#" -eq 0 ]; then
+            echo "::notice::No Python source folders yet; nothing to compile."
+            exit 0
+          fi
+          echo "Compiling: $*"
+          python -m compileall -q "$@"
+
+      - name: Check that every test folder is a package
+        shell: python
+        run: |
+          # unittest discovery silently skips a folder without __init__.py.
+          import pathlib
+          import sys
+
+          root = pathlib.Path("tests")
+          missing = set()
+          for test_file in root.rglob("test*.py"):
+              folder = test_file.parent
+              while True:
+                  if not (folder / "__init__.py").is_file():
+                      missing.add(folder.as_posix())
+                  if folder == root:
+                      break
+                  folder = folder.parent
+          for folder in sorted(missing):
+              print(f"::error::{folder} holds tests but has no __init__.py, so unittest skips it.")
+          sys.exit(1 if missing else 0)
+
+      - name: Unit tests
+        run: |
+          if ! python -c 'import pathlib, sys; sys.exit(0 if any(pathlib.Path("tests").rglob("test*.py")) else 1)'; then
+            echo "::notice::No test files under tests/ yet; nothing to run."
+            exit 0
+          fi
+          python -m unittest discover -s tests -t .
+
+      - name: Skills lint and registry drift
+        run: |
+          tool=tools/repo/skills/skills.py
+          if [ ! -f "$tool" ]; then
+            echo "::notice::$tool is not in this branch yet; skipping skills lint and the registry check."
+            exit 0
+          fi
+          set --
+          for dir in engine packs labs; do
+            if [ -d "$dir" ]; then
+              set -- "$@" "$dir"
+            fi
+          done
+          if [ "$#" -gt 0 ]; then
+            python "$tool" lint "$@"
+          else
+            echo "::notice::No packs/ or labs/ folder yet; skipping skills lint."
+          fi
+          python "$tool" registry --check
+
+      - name: Adapter outputs match their generators
+        run: |
+          tool=adapters/generate.py
+          if [ ! -f "$tool" ]; then
+            echo "::notice::$tool is not in this branch yet; skipping the adapter drift check."
+            exit 0
+          fi
+          python "$tool" --check
+
+      - name: Site outputs match their sources
+        run: |
+          tool=tools/repo/site/build.py
+          if [ ! -f "$tool" ]; then
+            echo "::notice::$tool is not in this branch yet; skipping the site drift check."
+            exit 0
+          fi
+          python "$tool" --check
+
+  windows:
+    name: Windows (wizard and installers)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Wizard, installer and session-open tests
+        run: python -m unittest -v tests.wizard.test_wizard tests.engine.test_codex tests.engine.test_session_open
+
+      - name: Wizard end to end
+        run: |
+          target="$RUNNER_TEMP/wizard-project"
+          mkdir -p "$target"
+          python tools/wizard/wizard.py doctor
+          python tools/wizard/wizard.py install --target "$target" --harness generic --harness cursor --harness gemini --harness flat --harness copilot
+          python tools/wizard/wizard.py check --target "$target"
+          python tools/wizard/wizard.py uninstall --target "$target"
+
+  leak-gate:
+    name: Leak gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Scan tracked files (fixtures/ and internal/ excluded)
+        env:
+          # Optional extra terms, one per line, kept out of the repository.
+          # Empty on forks and when the secret isn't set.
+          LEAKGATE_DENYLIST: ${{ secrets.LEAKGATE_DENYLIST }}
+        run: |
+          gate=tools/repo/leakgate/leakgate.py
+          if [ ! -f "$gate" ]; then
+            echo "::notice::$gate is not in this branch yet; skipping the leak gate."
+            exit 0
+          fi
+          list="$RUNNER_TEMP/tracked-files"
+          # internal/ exists only in the maintainers' private copy and never ships.
+          git ls-files -z -- . ':(exclude)fixtures/' ':(exclude)internal/' > "$list"
+          mapfile -d '' -t files < "$list"
+          echo "Scanning ${#files[@]} tracked files."
+          python "$gate" check "${files[@]}"
+
+      - name: Benchmark the gate (planted leaks caught, clean text blocked)
+        run: |
+          gate=tools/repo/leakgate/leakgate.py
+          if [ ! -f "$gate" ]; then
+            echo "::notice::$gate is not in this branch yet; skipping the benchmark."
+            exit 0
+          fi
+          report="$RUNNER_TEMP/leakgate-bench.txt"
+          status=0
+          python "$gate" bench > "$report" 2>&1 || status=$?
+          cat "$report"
+          recall="$(grep -o -E 'recall *= *[0-9]+ */ *[0-9]+' "$report" | tail -n 1 | tr -d ' ' || true)"
+          false_blocks="$(grep -o -E 'false_blocks *= *[0-9]+' "$report" | tail -n 1 | tr -d ' ' || true)"
+          if [ -z "$recall" ] || [ -z "$false_blocks" ]; then
+            echo "::error::bench must print recall=<caught>/<planted> and false_blocks=<n> (exit status $status)."
+            exit 1
+          fi
+          recall="${recall#recall=}"
+          caught="${recall%/*}"
+          planted="${recall#*/}"
+          false_blocks="${false_blocks#false_blocks=}"
+          {
+            echo "### Leak gate benchmark"
+            echo
+            echo "| Measure | Value |"
+            echo "| --- | --- |"
+            echo "| Planted leaks caught | ${caught} of ${planted} |"
+            echo "| False blocks on clean text | ${false_blocks} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ] || [ "$planted" -eq 0 ] || [ "$caught" -ne "$planted" ] || [ "$false_blocks" -ne 0 ]; then
+            echo "::error::The gate must catch every planted leak and block no clean text: recall=${caught}/${planted}, false_blocks=${false_blocks}, exit status ${status}."
+            exit 1
+          fi
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # gitleaks-action reads a pull request's commit list through the API.
+      pull-requests: read
+    steps:
+      - name: Check out (full history)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use the repository's gitleaks config when present
+        run: |
+          if [ -f .gitleaks.toml ]; then
+            echo "GITLEAKS_CONFIG=.gitleaks.toml" >> "$GITHUB_ENV"
+            echo "Using .gitleaks.toml."
+          else
+            echo "::notice::No .gitleaks.toml yet; gitleaks runs with its default rules."
+          fi
+
+      - name: Scan with gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Needed only when an organization owns the repository.
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          # The gitleaks release this action version defaults to, made explicit.
+          GITLEAKS_VERSION: "8.24.3"
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  actionlint:
+    name: Workflow lint (actionlint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Build actionlint from a pinned commit
+        env:
+          # rhysd/actionlint v1.7.12. Go verifies the module against the public
+          # checksum database before it builds anything.
+          ACTIONLINT_REF: 914e7df21a07ef503a81201c76d2b11c789d3fca
+        run: go install "github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_REF}"
+
+      - name: Lint every workflow
+        run: |
+          if command -v shellcheck > /dev/null; then
+            shellcheck --version
+          else
+            echo "::warning::shellcheck isn't on this runner, so actionlint skips the run: scripts."
+          fi
+          "$(go env GOPATH)/bin/actionlint" -color
+
+  ci-result:
+    name: CI result
+    if: always()
+    needs: [test, windows, leak-gate, secrets, actionlint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to pass
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
+          if ! jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$NEEDS" > /dev/null; then
+            echo "::error::At least one CI job failed or was cancelled; see the list above."
+            exit 1
+          fi

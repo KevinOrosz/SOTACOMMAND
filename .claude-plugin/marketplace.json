@@ -1,0 +1,21 @@
+{
+  "name": "sotacommand",
+  "owner": {
+    "name": "SOTACOMMAND"
+  },
+  "description": "The SOTACOMMAND engine plugin and its skill packs. The engine and packs whose skills are all stable start enabled; other packs and everything in labs/ are listed but start disabled.",
+  "plugins": [
+    {
+      "name": "sotacommand-engine",
+      "source": "./engine",
+      "category": "engine",
+      "defaultEnabled": true
+    },
+    {
+      "name": "example-pack",
+      "source": "./packs/example",
+      "category": "skills",
+      "defaultEnabled": false
+    }
+  ]
+}

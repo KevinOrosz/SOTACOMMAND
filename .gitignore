@@ -1,0 +1,31 @@
+# Python bytecode and OS clutter
+__pycache__/
+*.pyc
+.DS_Store
+
+# Eval runs. Raw results name models and hold transcripts, so only the
+# redacted summary.json under an evals/results/ folder may be committed,
+# at any depth (for example packs/<pack>/evals/results/<date>/summary.json).
+evals/results/**/report.html
+**/evals/results/**
+!**/evals/results/**/
+!**/evals/results/**/summary.json
+
+# Local secrets. The leak gate also blocks these paths.
+.env
+.env.*
+
+# Local build output: release zips and Jekyll previews
+/dist/
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# The planted leak corpus and test fixtures use the names above on purpose,
+# so they stay committable.
+!/fixtures/**/.env
+!/fixtures/**/.env.*
+!/fixtures/**/evals/results/**
+!/tests/**/.env
+!/tests/**/.env.*
+!/tests/**/evals/results/**

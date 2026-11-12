@@ -1,0 +1,30 @@
+{
+  "$comment": "Instance configuration for the SOTACOMMAND engine. Copy this file to your project root as os.config.json. Engine updates never overwrite it. Keys that start with $ are ignored. Reference: skills/os-boot/references/os-config.md in the engine plugin.",
+  "memory_caps": [
+    { "path": "memory/HANDOFF.md", "max_bytes": 900, "max_lines": 15 },
+    { "path": "memory/lessons.md", "max_bytes": 600, "max_lines": 14 }
+  ],
+  "protected_paths": [
+    "os.config.json",
+    "profile/**",
+    ".git/**",
+    ".claude/settings.json",
+    ".claude/settings.local.json",
+    ".sotacommand/**"
+  ],
+  "role_write_paths": {},
+  "shell_guard": {
+    "$comment": "Regular expressions matched against shell commands. deny blocks; ask needs your OK each time.",
+    "deny": ["\\bsudo\\b"],
+    "ask": ["\\bgit\\s+push\\b", "\\b(npm|pnpm|yarn)\\s+publish\\b", "\\bgh\\s+(pr\\s+merge|release\\s+create|repo\\s+delete)\\b", "\\bcurl\\b[^|]*\\|\\s*(ba|z)?sh\\b"]
+  },
+  "ledger": {
+    "$comment": "A local count of sessions, your messages (length only, never the text), refusals and failed closes, in .sotacommand/ledger.jsonl. Nothing leaves your computer. Set enabled to false to switch it off.",
+    "enabled": true
+  },
+  "close_gate": {
+    "verify": "",
+    "timeout_seconds": 300,
+    "block_repeats": false
+  }
+}

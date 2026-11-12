@@ -1,0 +1,597 @@
+/*
+  Eval dashboard styles.
+
+  build.py inlines this file into site/evals/index.html, which must stay one
+  self-contained file: no fonts, images, scripts or other external requests.
+  Light and dark values are separate, selected steps of the same palette.
+  Status colors always travel with an icon and a text label, never alone.
+*/
+
+:root {
+  color-scheme: light dark;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --hairline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.12);
+  --link: #1c5cab;
+  --focus: #2a78d6;
+  --code: #f0efec;
+  --score: #2a78d6;
+  --score-track: #cde2fb;
+  --delta-up: #2a78d6;
+  --delta-down: #e34948;
+  --delta-track: #f0efec;
+  --axis: #898781;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+  --neutral: #898781;
+  --alert-wash: rgba(208, 59, 59, 0.07);
+  --sample-wash: rgba(250, 178, 25, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --hairline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.12);
+    --link: #86b6ef;
+    --focus: #86b6ef;
+    --code: #262624;
+    --score: #3987e5;
+    --score-track: #0d366b;
+    --delta-up: #3987e5;
+    --delta-down: #e66767;
+    --delta-track: #2c2c2a;
+    --alert-wash: rgba(230, 103, 103, 0.13);
+    --sample-wash: rgba(250, 178, 25, 0.13);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 0.15em;
+}
+
+a:focus-visible,
+.table-wrap:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+code,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.875em;
+}
+
+code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--code);
+  overflow-wrap: anywhere;
+}
+
+pre {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: var(--code);
+  line-height: 1.45;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  font-size: 1em;
+  overflow-wrap: normal;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--focus);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+.wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Header */
+
+.page-header {
+  padding: 2rem 0 1.5rem;
+}
+
+.crumbs {
+  margin: 0 0 0.75rem;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.crumbs .sep {
+  margin: 0 0.375rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  margin: 2.5rem 0 0.5rem;
+  font-size: 1.375rem;
+  line-height: 1.3;
+}
+
+h3 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.35;
+}
+
+.lede {
+  max-width: 46rem;
+  margin: 0.75rem 0 0;
+  color: var(--ink-2);
+  font-size: 1.0625rem;
+}
+
+.section-note {
+  max-width: 46rem;
+  margin: 0 0 1rem;
+  color: var(--ink-2);
+}
+
+/* Banners and callouts */
+
+.sample-banner,
+.callout {
+  margin: 0 0 1.5rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.sample-banner {
+  border-left: 4px solid var(--warning);
+  background: var(--sample-wash);
+}
+
+.callout-critical {
+  border-left: 4px solid var(--critical);
+}
+
+.callout h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+}
+
+.callout p {
+  margin: 0 0 0.5rem;
+}
+
+.callout ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* Summary tiles */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+}
+
+.tile {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.tile.is-alert {
+  border-left: 4px solid var(--critical);
+}
+
+.tile dt {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.tile dd {
+  margin: 0;
+}
+
+.tile .value {
+  margin-top: 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tile .sub {
+  margin-top: 0.25rem;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* Tables */
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+/* Separate borders belong to their cells, so they move with the sticky column. */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9375rem;
+}
+
+caption {
+  padding: 0.75rem 1rem 0.5rem;
+  caption-side: top;
+  font-weight: 600;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+}
+
+thead th {
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+tbody th {
+  font-weight: 600;
+}
+
+tbody th,
+time,
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Keep the row label in view while a wide table scrolls sideways. */
+tbody th,
+thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--surface);
+}
+
+/* An opaque edge, so cells scrolling under the sticky column never show through. */
+tr > :first-child {
+  border-left: 4px solid var(--surface);
+}
+
+tr.is-regression > * {
+  background-image: linear-gradient(var(--alert-wash), var(--alert-wash));
+}
+
+tr.is-regression > :first-child {
+  border-left-color: var(--critical);
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.tag {
+  display: inline-block;
+  margin-left: 0.375rem;
+  padding: 0 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: 0.1em;
+}
+
+/* Status chips: icon badge plus a text label */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.status-stable .status-icon,
+.status-improved .status-icon {
+  background: var(--good);
+}
+
+.status-below .status-icon {
+  background: var(--warning);
+  color: #0b0b0b;
+}
+
+.status-regression .status-icon {
+  background: var(--critical);
+}
+
+.status-none .status-icon {
+  background: var(--neutral);
+}
+
+.reason {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+}
+
+/* Score meter (0 to 1) and delta bar (-1 to +1). Both repeat a number printed
+   beside them, so they are hidden from assistive technology. */
+
+.meter,
+.dbar {
+  position: relative;
+  display: block;
+  width: 8rem;
+  max-width: 100%;
+  height: 8px;
+  margin: 0.375rem 0 0 auto;
+}
+
+.meter {
+  border-radius: 999px;
+  background: var(--score-track);
+}
+
+.meter-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--score);
+}
+
+.dbar {
+  border-radius: 2px;
+  background: var(--delta-track);
+}
+
+.dbar-zero {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 50%;
+  width: 1px;
+  background: var(--axis);
+}
+
+.dbar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.dbar-fill.up {
+  border-radius: 0 4px 4px 0;
+  background: var(--delta-up);
+}
+
+.dbar-fill.down {
+  border-radius: 4px 0 0 4px;
+  background: var(--delta-down);
+}
+
+.mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+/* Empty state, definitions, footer */
+
+.empty {
+  max-width: 46rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.empty h2 {
+  margin-top: 0;
+}
+
+.empty ol {
+  padding-left: 1.25rem;
+}
+
+.empty li + li {
+  margin-top: 0.75rem;
+}
+
+.defs {
+  display: grid;
+  grid-template-columns: minmax(9rem, max-content) 1fr;
+  gap: 0.5rem 1.5rem;
+  max-width: 56rem;
+  margin: 0;
+}
+
+.defs dt {
+  font-weight: 600;
+}
+
+.defs dd {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.page-footer {
+  margin-top: 3rem;
+  padding: 1.5rem 0 2.5rem;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.page-footer p {
+  margin: 0.25rem 0;
+}
+
+@media (max-width: 40rem) {
+  h1 {
+    font-size: 1.625rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .defs {
+    grid-template-columns: 1fr;
+  }
+
+  .defs dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .meter,
+  .dbar {
+    border: 1px solid CanvasText;
+  }
+
+  .meter-fill,
+  .dbar-fill,
+  .mark,
+  .dbar-zero {
+    forced-color-adjust: none;
+  }
+
+  .meter-fill,
+  .dbar-fill {
+    background: Highlight;
+  }
+
+  .mark,
+  .dbar-zero {
+    background: CanvasText;
+  }
+
+  .status-icon {
+    border: 1px solid CanvasText;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .skip-link {
+    display: none;
+  }
+
+  .table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+}

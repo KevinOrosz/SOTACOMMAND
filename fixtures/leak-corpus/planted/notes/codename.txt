@@ -1,0 +1,3 @@
+Codename: lanternfish
+Repo slug: projectlanternfish-v2
+Channel: #LanternfishOps

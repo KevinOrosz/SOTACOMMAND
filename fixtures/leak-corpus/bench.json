@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "extends": "../../tools/repo/leakgate/rules.json",
+  "description": "TEST-ONLY configuration for leakgate bench. It extends the production rules with invented private markers, so every rule type is exercised against the corpora. Never reuse these terms or this salt for anything real.",
+  "regex": [
+    {
+      "id": "email",
+      "always_flag": ["avery@example.invalid"]
+    }
+  ],
+  "terms": [
+    {
+      "id": "owner-name",
+      "description": "The invented owner. Flexible separators also catch the handle avery-example.",
+      "terms": ["Avery Example"]
+    },
+    {
+      "id": "persona-name",
+      "description": "Invented persona names. Case-sensitive whole words, so prose like 'herald' never matches.",
+      "case_sensitive": true,
+      "terms": ["SAGE", "RUNE", "FLUX", "BEACON", "HERALD", "EMBER"]
+    },
+    {
+      "id": "client-name",
+      "description": "An invented client.",
+      "terms": ["Northwind Retreats"]
+    },
+    {
+      "id": "brand-name",
+      "description": "An invented brand.",
+      "terms": ["Brightwater Atelier"]
+    },
+    {
+      "id": "codename",
+      "description": "A substring term: it matches inside longer words too.",
+      "terms": [{"term": "lanternfish", "whole_word": false}]
+    }
+  ],
+  "denylist_files": ["denylist.txt"],
+  "hashed_denylist": {
+    "files": ["hashed-denylist.json"],
+    "salt_file": "bench.salt"
+  },
+  "bench": {
+    "env": {
+      "LEAKGATE_DENYLIST": "# Invented terms the bench supplies as if they were the CI secret.\nCalloway Pines\nVESPERLINE\nmarigold-ops\n"
+    }
+  }
+}

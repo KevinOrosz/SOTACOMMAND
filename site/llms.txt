@@ -1,0 +1,22 @@
+# SOTACOMMAND
+
+> A portable operating system for a team of AI agents: roles, skills, memory and governance as plain files, with each skill's eval results published.
+
+This file indexes the docs site for agents and tools. Each entry links to a page and says what it covers.
+
+## Docs
+
+- [Overview](index.html): What the project is: a portable operating system for a team of AI agents, shipped as plain files, with each skill's eval results published.
+- [Quickstart](quickstart.html): From clone to first task in five minutes: type WIZARD in any agent tool, or run the installer yourself.
+- [Concepts](concepts.html): The four layers: a team of roles with hard boundaries, skills that must prove themselves, tiered memory with caps, and governance that verifies work.
+- [Harnesses](harnesses.html): Set up Claude Code from the plugin marketplace; Codex, Cursor and Gemini CLI through AGENTS.md; GitHub Copilot through .github/agents; any chat assistant through one prompt file.
+- [Qualify a skill](qualify-a-skill.html): The stable rule (a score of at least 0.80 and a Δ of at least +0.20 over 3 or more runs) and how to measure it with claude plugin eval against a no-skill baseline.
+- [FAQ](faq.html): Answers on setup help, models, harnesses, the stable rule, re-running evals, network use, updates and contributing.
+
+## Eval results
+
+- [Eval dashboard](evals/index.html): Each measured skill's with-skill score, Δ against a no-skill baseline, runs and date, built from redacted eval summaries.
+
+## Optional
+
+- [Full text](llms-full.txt): Every docs page above, concatenated in reading order.

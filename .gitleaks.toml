@@ -1,0 +1,32 @@
+# gitleaks configuration: secrets scanning for this repository.
+#
+# gitleaks finds credentials; tools/repo/leakgate finds private material
+# (names, home paths, house rule codes, model identifiers). CI runs both.
+#
+# Format checked against the gitleaks v8.30.1 README and config/config.go:
+# `[[allowlists]]` needs gitleaks v8.25.0 or later, hence minVersion.
+# Paths are Go regular expressions matched against the scanned file path.
+
+title = "SOTACOMMAND secrets scanning"
+minVersion = "v8.25.0"
+
+[extend]
+# Start from the rules built into the gitleaks binary.
+useDefault = true
+
+[[allowlists]]
+description = "Leak-gate fixtures: the planted corpus and the rule samples contain deliberate, invented secrets that measure the leak gate's recall. They are never real credentials."
+paths = [
+  '''(?:^|/)fixtures/leak-corpus/planted/''',
+  '''(?:^|/)fixtures/leak-corpus/samples/''',
+]
+
+[[allowlists]]
+description = "The clean leak corpus quotes the AWS documentation example key pair on purpose, to prove tutorials can cite it. Only those exact values, only in that one file."
+condition = "AND"
+paths = [
+  '''(?:^|/)fixtures/leak-corpus/clean/docs/security\.md$''',
+]
+regexes = [
+  '''^(?:AKIAIOSFODNN7EXAMPLE|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY)$''',
+]

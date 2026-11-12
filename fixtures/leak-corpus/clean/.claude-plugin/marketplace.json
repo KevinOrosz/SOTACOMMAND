@@ -1,0 +1,18 @@
+{
+  "name": "sotacommand",
+  "owner": {
+    "name": "Owner"
+  },
+  "plugins": [
+    {
+      "name": "sotacommand-engine",
+      "source": "./engine",
+      "description": "Roles, hooks and the session ritual."
+    },
+    {
+      "name": "example-pack",
+      "source": "./packs/example",
+      "description": "Two synthetic skills with eval cases."
+    }
+  ]
+}

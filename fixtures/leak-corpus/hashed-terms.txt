@@ -1,0 +1,9 @@
+# TEST-ONLY plaintext source of hashed-denylist.json (rule id: hashed-term).
+# Invented terms. tests/leakgate checks that the published list regenerates exactly:
+#   python3 tools/repo/leakgate/leakgate.py hash-denylist fixtures/leak-corpus/hashed-terms.txt \
+#     --salt-file fixtures/leak-corpus/bench.salt --out fixtures/leak-corpus/hashed-denylist.json
+Juniper Atlas
+bramblecote
+Saltmarsh Collective Studio
+ORRERY
+Fen Lantern Supper Club

@@ -1,0 +1,33 @@
+# Store and check out text with LF on every OS, so generated files and their
+# --check drift tests match byte for byte on Windows too.
+* text=auto eol=lf
+
+# Scripts must keep LF to run.
+*.sh text eol=lf
+*.py text eol=lf
+
+# Binary files: never convert line endings or diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+
+# Generated docs: collapse their diffs in pull requests. CI checks they match
+# their sources.
+REGISTRY.md linguist-generated=true
+site/evals/index.html linguist-generated=true
+site/llms.txt linguist-generated=true
+site/llms-full.txt linguist-generated=true
+
+# Never include internal material in source archives made by `git archive`,
+# including the "Source code" downloads GitHub attaches to releases.
+/internal export-ignore
+
+# The public tree is cut with `git archive`: internal/ never ships.
+/internal export-ignore

@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: csv-blank-cells
+expected_outcome: "summary.md reports 5 rows, totals 30 for stock, 37 for reorder_level and 17.50 for unit_cost, skips sku and item, and flags -2 (stock, row 5)."
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,679 @@
+# SOTACOMMAND: full text
+
+> A portable operating system for a team of AI agents: roles, skills, memory and governance as plain files, with each skill's eval results published.
+
+Every page of the docs site in reading order, for agents and tools that read a single file. The page index is [llms.txt](llms.txt).
+
+---
+
+Source: index.html
+
+# Run your AI agents like a team
+
+This project is a portable operating system for a team of AI agents. Every agent gets a role with hard boundaries. Skills have to prove they help before anyone relies on them. Memory stays small enough to load at the start of every session, and governance checks work before it's called done. Everything is plain files that any harness can read, and nothing in them is tied to one model vendor.
+
+> **Status: pre-release.** The engine plugin, the skills toolchain, these docs and the eval dashboard are built and tested. Open gaps are listed in the repository's `ROADMAP.md`. To start, open the repository in any agent tool and type `WIZARD`.
+
+## Four layers in one place
+
+Each of these layers is easy to find on its own. A prompt pack gives you skills without governance. A framework gives you code without an operating doctrine. A memory system gives you recall without a team. This project ships all four, designed to work together:
+
+| Layer | What you get |
+|---|---|
+| **Team** | Role contracts with hard boundaries and handoffs. Each role owns one lane and hands back a defined result. |
+| **Skills** | A library with a status lifecycle: experimental, stable and retired. Every stable skill ships its eval cases and results. |
+| **Memory** | Three tiers with size caps and decay, so the context loaded at the start of a session stays small and current. |
+| **Governance** | Routing, pushback, convergence, an audit of the owner's time, and verify-before-done. |
+
+[Concepts](concepts.html) explains each layer with a diagram.
+
+## Proof, not claims
+
+A skill is called stable only when it measurably beats having no skill at all. Each skill ships eval cases in the standard `claude plugin eval` format. Every case runs three times with the skill and three times without it, which gives two numbers: the with-skill score, from 0 to 1, and Δ, how far that score sits above the no-skill baseline.
+
+- **Stable** means a with-skill score of at least 0.80 and a Δ of at least +0.20, over 3 or more runs.
+- **Experimental** means the skill loads but hasn't proven itself yet.
+- **Δ at or below 0** means the skill doesn't beat no skill, so it gets reworked or retired. That result is published too.
+
+The [eval dashboard](evals/index.html) lists every measured skill, and [Qualify a skill](qualify-a-skill.html) shows how to re-run the numbers yourself.
+
+## A role that audits your time
+
+One role, the owner-auditor, measures what the agent team costs you: the hours you spend steering it, the interventions you have to repeat, and the one fix that would save you the most time. It reports facts and a single recommendation, and it leaves the decision with you. It has no lane in health, finance, security or wellbeing, and it doesn't review specialist work.
+
+## Works where you work
+
+| Harness | How it reads the OS |
+|---|---|
+| Claude Code | Plugins from this repository's marketplace |
+| Codex | `AGENTS.md` and skills in `.agents/skills/` |
+| GitHub Copilot | Custom agents in `.github/agents/` |
+| Cursor | `AGENTS.md` and an always-applied rule in `.cursor/rules/` |
+| Gemini CLI | `GEMINI.md`, which imports `AGENTS.md` |
+| Hermes Agent | `AGENTS.md`, plus the skills in `.agents/skills/` once the project is trusted |
+| Any chat assistant | One flat prompt file, `SOTACOMMAND.prompt.md` |
+
+Setup for each is on [Harnesses](harnesses.html).
+
+## Start here
+
+- [Quickstart](quickstart.html): install what exists today.
+- [Concepts](concepts.html): team, skills, memory and governance.
+- [Qualify a skill](qualify-a-skill.html): the stable rule, and how to run the evals with a no-skill baseline.
+- [FAQ](faq.html): models, harnesses, updates and setup help.
+
+---
+
+Source: quickstart.html
+
+# Quickstart
+
+> **The one-word start.** Clone the repository, open it in any agent tool, and type `WIZARD`. It interviews you in plain words (your project, who it's for, which helpers you want), then does every step below for you and shows each command first.
+
+## 1. Get the repository
+
+```bash
+git clone https://github.com/KevinOrosz/SOTACOMMAND.git SOTACOMMAND
+cd SOTACOMMAND
+```
+
+You need Python 3.9 or later and nothing else. Check with `python3 tools/wizard/wizard.py doctor`.
+
+## 2. Install into your project
+
+Pick the line for your agent tool. Add `--dry-run` first to preview; the installer never overwrites a file.
+
+```bash
+python3 tools/wizard/wizard.py install --target ~/my-project --harness claude    # Claude Code
+python3 tools/wizard/wizard.py install --target ~/my-project --harness codex     # Codex
+python3 tools/wizard/wizard.py install --target ~/my-project --harness copilot   # GitHub Copilot
+python3 tools/wizard/wizard.py install --target ~/my-project --harness generic   # any other tool
+```
+
+For Claude Code, also run the two `claude plugin ...` commands the installer prints. [Harnesses](harnesses.html#claude-code) covers sharing a plugin with your team and turning on experimental packs.
+
+## 3. Do the interview
+
+```bash
+python3 tools/wizard/wizard.py interview --target ~/my-project
+```
+
+About ten plain questions. It writes `TEAM.md`, your team card with the exact words to say to each helper, and `profile/owner.md`, the rules every helper reads and none can change.
+
+## 4. Check it
+
+```bash
+python3 tools/wizard/wizard.py check --target ~/my-project
+```
+
+You want `wizard: ready`.
+
+## 5. Give it a task
+
+Open your project in your agent tool and say a line from your `TEAM.md`, or something like *"Add a dark-mode toggle to the settings page."* The orchestrator routes it to the builder, which works in its own git worktree and hands back the change with its test output. Try *"Run the owner-auditor for this week"* to see where your time went.
+
+Using another tool? See [Harnesses](harnesses.html). For memory that lasts months, pair it with [SOTASECONDBRAIN](https://github.com/KevinOrosz/SOTASECONDBRAIN).
+
+---
+
+Source: concepts.html
+
+# Concepts
+
+The OS has four layers: [team](#team), [skills](#skills), [memory](#memory) and [governance](#governance). Each is a set of plain files, and each comes with rules that tools and CI check, so the system doesn't depend on an agent remembering to behave.
+
+## Team
+
+A team is a set of roles, and each role is a contract: what it owns, what it hands back, and a hard boundary it never crosses. Roles are named for the job they do. Display names are optional configuration, so you can rename them without changing any contract.
+
+Every request goes to the orchestrator first. It routes the work to exactly one owner, and the specialist works inside its own lane and hands back a defined result. The orchestrator then accepts the result or sends it back.
+
+```text
+                                    owner
+                                      |
+                                      | request
+                                      v
+                             +----------------+
+                             |  orchestrator  |  routes, sequences, accepts
+                             +----------------+
+                                      |
+        +-------------+---------------+---------------+-------------+
+        |             |               |               |             |
+        v             v               v               v             v
+ +------------+  +---------+  +---------------+  +--------+  +------------+
+ | researcher |  | builder |  | owner-auditor |  | sensor |  | repurposer |
+ +------------+  +---------+  +---------------+  +--------+  +------------+
+   evidence,      artifact     burden ledger,     audience       drafts
+      spec         + proof         top fix         brief          only
+        |             |               |               |             |
+        +-------------+---------------+---------------+-------------+
+                                      |
+                                      | handoff: result + done conditions
+                                      v
+                  orchestrator accepts it or sends it back
+```
+
+| Role | Owns | Hands back | Hard boundary |
+|---|---|---|---|
+| orchestrator | Intake, routing, sequencing, synthesis, acceptance and the final handoff | A route plan, the decisions left to the owner, and a status report | Never does a specialist's work without loading that role first. The owner steers; the orchestrator never opens with directives. |
+| researcher | Research, analysis, specs, and knowledge and file engineering | Evidence, a thesis, a build-ready spec and a self-scored rubric | Doesn't take on builds or content work |
+| builder | Code, apps, automations and tests | A working artifact and proof that it was verified | Stops on consequential blockers and doesn't set product direction |
+| owner-auditor | The time, attention and repeated intervention the system costs its owner, measured with a fixed set of checks | A burden ledger, the defect behind it, the highest-leverage fix and the decision left to the owner | No health, finance, security or wellbeing lane, and no review of specialist work |
+| sensor | Read-only audience evidence, summarized in one periodic brief | Verbatim audience language and one falsifiable bet | No account access, replies or content creation |
+| repurposer | Turning one approved piece into drafts for each platform, in the priority order set in configuration | Drafts only | Never posts, uploads, schedules or invents material |
+
+**Boundaries are enforced, not requested.** The engine plugin turns each role into a Claude Code agent whose tool list enforces its boundary. The sensor gets read-only tools, the repurposer gets no posting tools, the builder works in an isolated git worktree, and a protected-path hook confines the owner-auditor's writes to memory. Roles also declare a capability tier (low, mid or high) instead of a model, and the agents run on whatever model the session uses. In other harnesses, the same contracts ship as plain markdown.
+
+## Skills
+
+A skill is a folder holding a `SKILL.md` file in the open Agent Skills format: a short frontmatter block, then the instructions. The frontmatter uses only the portable keys (`name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools`), so the same folder loads wherever the format is supported, including Claude Code, claude.ai and Codex. Project fields such as the version and the status go under `metadata`, as plain strings:
+
+```yaml
+---
+name: release-notes
+description: Drafts release notes from merged changes. Use when preparing a release.
+metadata:
+  version: "1.0.0"
+  status: experimental
+  pack: ops
+  min-tier: mid
+  roles: orchestrator,builder
+  gate: none
+---
+```
+
+Skills ship in packs. Each pack is a Claude Code plugin under `packs/`, with its skills under `skills/` and its eval cases under `evals/`. Experimental packs live under `labs/` and install switched off.
+
+Every skill moves through a status lifecycle, and only a measured run moves it forward:
+
+```text
+   new skill
+       |
+       v
+ +--------------+    delta at or below 0  +--------------------------+
+ | experimental | ----------------------> | rework and run again,    |
+ +--------------+ <---------------------- | or retire                |
+       |                 reworked         +--------------------------+
+       | qualifying run meets                          |
+       | the stable bar                                | retire
+       v                                               v
+ +--------------+          replaced          +--------------------+
+ |    stable    | -------------------------> |      retired       |
+ +--------------+                            | a stub that points |
+                                             | to its replacement |
+                                             +--------------------+
+```
+
+| Status | What it means | How it behaves |
+|---|---|---|
+| experimental | Loads, but has no qualifying run yet | Offered, never fired on its own, and says that it's unproven |
+| stable | Passed a recorded qualifying run; its eval cases and results ship with it | Fires on matching requests and says which skill it is |
+| retired | Replaced or withdrawn | Ships only as a short stub that points to its replacement |
+
+Some skills are mandatory gates: they fire in every situation that matches, and a skill that bundles others never hides one. [Qualify a skill](qualify-a-skill.html) gives the exact stable rule and how to measure it.
+
+## Memory
+
+Memory comes in three tiers, and only the first loads by itself. Tier 1 is capped at about 1.5 KB, so a long-running project starts every session with the same small, current context instead of a pile that keeps growing.
+
+```text
+ +----------------------------------------------------------------+
+ | Tier 1: boot memory                      loaded at every start |
+ | status report (15 lines max) + standing lessons (12 max)       |
+ +----------------------------------------------------------------+
+            |
+            | entries age out or pass their caps
+            v
+ +----------------------------------------------------------------+
+ | Tier 2: working memory                          read on demand |
+ | task board + run ledger                                        |
+ +----------------------------------------------------------------+
+            |
+            | the decay report proposes moves; a move leaves a tombstone
+            v
+ +----------------------------------------------------------------+
+ | Tier 3: archive                             searched on demand |
+ | cold storage; nothing is ever deleted                          |
+ +----------------------------------------------------------------+
+```
+
+- **Caps are checked by tools.** A verification step reports any tier-1 file that's over its cap, so you see the overflow instead of carrying it.
+- **Decay is report-only by default.** It proposes what to move, and you decide.
+- **Moves leave tombstones.** Nothing is deleted, so you can always trace where an entry went.
+- **Board items age out.** Entries on the task board move on after 30 days unless they're pinned.
+- **One search covers every tier.** A single recall command searches all three.
+
+## Governance
+
+Governance is the set of rules that keeps a team of agents honest. Here every rule is backed by a tool, a hook or a check, not by a reminder in a prompt.
+
+```text
+  session opens              during work                session closes
+ +----------------+    +------------------------+    +--------------------+
+ | preflight      |    | one owner per artifact |    | close gate         |
+ |  memory sizes  | -> | pushback with evidence | -> |  verification      |
+ |  drift, stated |    | independent passes,    |    |  must pass         |
+ |  as facts      |    |  then one synthesis    |    |  status report,    |
+ +----------------+    +------------------------+    |  lessons, run log  |
+          ^                                          +--------------------+
+          |                                                     |
+          +--- the next session starts from the status report --+
+```
+
+| Rule | What it means | What enforces it |
+|---|---|---|
+| Routing | Every artifact has exactly one owner, and lanes don't overlap | The orchestrator's route plan and each role's tool limits |
+| Pushback | Agents argue from evidence, tag their confidence, and don't give in without new evidence | The role contracts |
+| Convergence | Several independent passes over the same input, then one synthesizer that lists where they agree and where they contradict each other | A workflow that keeps the passes separate |
+| Owner-time audit | The owner-auditor measures what the system costs you | Its weekly report |
+| Verify before done | Work isn't done until its verification passes | The close gate, which fails while a configured check fails |
+
+Two more rules keep sessions predictable. When a session opens, the preflight reports drift as facts, never as instructions. And when a role source breaks its contract, for example an unknown file in a role folder or a delegation to a role that doesn't exist, the generator stops with an error instead of guessing.
+
+---
+
+Source: harnesses.html
+
+# Harnesses
+
+The roles, skills and rules are written once, as plain files. Thin adapters give each harness the entry files it expects, so nothing is maintained twice.
+
+| Harness | Entry point | Skills | Status |
+|---|---|---|---|
+| Claude Code | Plugins from this repository's marketplace | Inside each plugin, under `skills/` | v0.1: engine plugin and skill packs |
+| Codex | `AGENTS.md` at the project root | `.agents/skills/` | v0.1 |
+| GitHub Copilot | Custom agents in `.github/agents/` | Through the agents | v0.1, generated with the engine |
+| Cursor | `AGENTS.md`, plus the always-applied rule `.cursor/rules/sotacommand.mdc` | `.agents/skills/` | v0.1 |
+| Gemini CLI | `GEMINI.md`, which imports `AGENTS.md` | `.agents/skills/` | v0.1 |
+| Hermes Agent | `AGENTS.md` at the project root | `.agents/skills/`, after `hermes skills trust` | v0.1, not yet run on a real Hermes install |
+| Any chat assistant or wrapper | `SOTACOMMAND.prompt.md`, one file to paste into its instructions | Inlined in that file | v0.1 |
+
+## Claude Code
+
+### Install from the marketplace
+
+Add this repository as a plugin marketplace, then install the plugins you want:
+
+```bash
+claude plugin marketplace add KevinOrosz/SOTACOMMAND
+claude plugin install <plugin>@sotacommand
+```
+
+The marketplace is named `sotacommand`, and the engine plugin is `sotacommand-engine`; `<plugin>` below is any plugin it lists. To browse the plugins, run `/plugin` in a Claude Code session and open the **Discover** tab. Inside a session, `/plugin install <plugin>@sotacommand` does the same as the shell command, and lets you review the plugin and pick a scope first.
+
+### Share a plugin with your team
+
+```bash
+claude plugin install <plugin>@sotacommand --scope project
+```
+
+Project scope records the plugin in your repository's `.claude/settings.json`, which you commit. That turns the plugin on for collaborators, but it doesn't download it for them, so each collaborator runs the same command once. Use `--scope local` to enable a plugin for yourself in one repository only.
+
+### Turn on an experimental pack
+
+Packs under `labs/` are unproven, so they install switched off. Turn one on when you want to try it:
+
+```bash
+claude plugin enable <plugin>@sotacommand
+```
+
+### Update
+
+```bash
+claude plugin marketplace update sotacommand
+claude plugin update <plugin>@sotacommand
+```
+
+The first command refreshes the marketplace listing; the second updates one installed plugin. A running session keeps the version it loaded, so run `/reload-plugins` or start a new session to pick up the update.
+
+### Project instructions
+
+Claude Code v2.1.277 and later reads `AGENTS.md` as your project instructions when there's no `CLAUDE.md` in your working directory or above it. If you keep a `CLAUDE.md`, add a line with `@AGENTS.md` to it to import the same file. Claude Code never loads a `CLAUDE.md` that sits inside a plugin, so the OS ships its own instructions as skills.
+
+### What the engine plugin adds
+
+- Each role becomes a plugin agent whose tool list enforces the role's boundary.
+- Sessions start as the orchestrator, through the plugin's `settings.json`.
+- Hooks run the session ritual: a preflight when a session opens, a close gate when it ends, and a guard that blocks writes to protected paths.
+
+## Codex
+
+Codex reads `AGENTS.md` and the skills in `.agents/skills/`. From a clone of this repository, the installer writes both into your project:
+
+```bash
+git clone https://github.com/KevinOrosz/SOTACOMMAND.git
+python3 SOTACOMMAND/tools/wizard/wizard.py install --target ~/my-project --harness codex
+```
+
+It copies each skill folder (copies, not symlinks, so it also works on Windows) and writes an `AGENTS.md` with the role table, but only if your project doesn't have one yet. Run it again after `git pull` to update.
+
+## GitHub Copilot
+
+Copilot reads custom agent profiles from `.github/agents/` in your repository. The engine generates one profile per role, `.github/agents/<role>.agent.md`, with the role's description and tool list, so the same boundaries apply in Copilot. Install them with `python3 tools/wizard/wizard.py install --target ~/my-project --harness copilot`. Copilot doesn't enforce write scopes or worktrees, so each profile states those limits as rules.
+
+## Cursor
+
+Cursor reads `AGENTS.md` at the project root. The installer also writes `.cursor/rules/sotacommand.mdc`, a project rule with `alwaysApply: true` that points to `AGENTS.md`, so the roles and the boot and close steps apply in every chat:
+
+```bash
+python3 tools/wizard/wizard.py install --target ~/my-project --harness cursor
+```
+
+## Gemini CLI
+
+Gemini CLI reads `GEMINI.md`. The installer writes one that imports `AGENTS.md` with Gemini CLI's `@./AGENTS.md` syntax, so there is still only one file of instructions to edit:
+
+```bash
+python3 tools/wizard/wizard.py install --target ~/my-project --harness gemini
+```
+
+## Hermes Agent
+
+Hermes Agent is a full agent runtime with its own tools, sandboxes and memory. SOTACOMMAND runs on top of it as the team and its rules. According to Hermes's documentation, it reads `AGENTS.md` from the project and loads project skills from `.agents/skills/` once you trust the project, so the neutral install is all it needs:
+
+```bash
+python3 tools/wizard/wizard.py install --target ~/my-project --harness hermes
+hermes skills trust ~/my-project
+```
+
+Three things to know:
+
+- Hermes finds project skills from the nearest git project, so the folder needs `git init`.
+- Hermes loads one project instruction file, first match wins: `.hermes.md`, then `AGENTS.override.md`, then `AGENTS.md`. If one of the first two is in your folder, your team won't load. The installer and `wizard.py check` warn you.
+- Hermes doesn't know the helpers' limits. They are rules the Lead follows; Hermes's own command approval and sandbox backends are the hard boundary. Your Hermes identity file (`SOUL.md` in its home folder) is never touched.
+
+This adapter is built from Hermes's documentation and has not been run on a real Hermes install yet.
+
+## Any other chat assistant or wrapper
+
+For a tool that can't read project files (a chat UI, a custom GPT-style assistant, an agent wrapper with a single system prompt), install the flat prompt. `SOTACOMMAND.prompt.md` holds the roles, the boot and close steps and every installed skill in one file; paste it into the tool's instructions:
+
+```bash
+python3 tools/wizard/wizard.py install --target ~/my-project --harness flat
+```
+
+Without a file system there's no `memory/`, so the prompt asks the assistant to hand you the end-of-session sitrep to paste into the next chat. Nothing in it is enforced: treat every boundary as a rule the model follows, not one the tool guarantees.
+
+## Update
+
+After `git pull` in your SOTACOMMAND folder:
+
+```bash
+python3 tools/wizard/wizard.py update --target ~/my-project --dry-run
+python3 tools/wizard/wizard.py update --target ~/my-project
+```
+
+A file the installer wrote and you haven't changed is replaced. One you edited is kept, and the new version is written beside it as `<name>.new`. Your team card is rebuilt from your interview answers. `os.config.json` only gains what it lacks (new settings and protected paths), after a backup to `os.config.json.bak`. `wizard.py check` tells you when a project is behind.
+
+## Uninstall
+
+Every file the installer writes is recorded, with its hash, in `.sotacommand/install.json`. To take SOTACOMMAND out of a project:
+
+```bash
+python3 tools/wizard/wizard.py uninstall --target ~/my-project --dry-run
+python3 tools/wizard/wizard.py uninstall --target ~/my-project
+```
+
+It removes only recorded files that are unchanged since the install. A memory file or config you've edited is kept and listed, and a file the installer didn't write is never touched. For Claude Code, also run `claude plugin uninstall <plugin>@sotacommand`.
+
+---
+
+Source: qualify-a-skill.html
+
+# Qualify a skill
+
+A skill becomes stable by beating no skill, measured and published. This page gives the rule, then walks through measuring a skill yourself: writing eval cases, running them with and without the skill, and publishing the result.
+
+## The stable rule
+
+| Status | Rule |
+|---|---|
+| **stable** | A with-skill score of at least **0.80** and a Δ of at least **+0.20**, over at least **3 runs** per arm on the pinned model |
+| **experimental** | Loads, but has no qualifying run yet |
+| **rework or retire** | Δ at or below 0: the skill does no better than no skill |
+
+- **With-skill score:** the mean case score with the skill's plugin loaded, from 0 to 1.
+- **Δ (delta):** the with-skill score minus the score of the same cases run with no plugin loaded. Δ is what the skill contributed.
+- **Runs:** each case runs 3 times in each arm by default, because a single run of a non-deterministic agent tells you little.
+
+The numbers must come from one complete run, not one stopped early, that ran every case with and without the skill and covered at least 3 of the skill's eval cases. Pinned means the run named its models with `--model` and `--judge-model`, so a later run can be compared like for like.
+
+A high score alone proves nothing. If a case scores 1.0 both with and without the skill, the skill isn't what made it pass, which is why the rule needs both numbers.
+
+## How a score is computed
+
+1. A run's score is the fraction of its graders that passed, weighted if you set weights.
+2. A case's score is the mean of its runs.
+3. A suite's score is the mean of its cases. Δ is computed per case and then averaged.
+
+## Write the eval cases
+
+Each pack keeps its cases in an `evals/` folder, grouped by skill: one folder per case under `evals/<skill>/`. `claude plugin eval init` can draft them for you: it asks what a good result looks like, proposes prompts and graders, tries them once and writes the files. The layout it writes looks like this:
+
+```text
+packs/<pack>/
+├── .claude-plugin/plugin.json
+├── skills/<skill>/SKILL.md
+└── evals/
+    └── <skill>/<case>/
+        ├── prompt.md            run limits and tools in frontmatter; the prompt below
+        ├── case.yaml            case name, expected outcome, optional setup script
+        ├── place-files.sh       optional: creates the input files
+        └── graders/
+            ├── 01-summary-exists.md
+            ├── 02-negative-flagged.md
+            └── 03-skill-fired.md
+```
+
+**`prompt.md`** sets the run limits and the tools the case may use, then gives the prompt. Phrase it the way a person would type it, without naming the skill, so the case also tests whether the skill gets picked:
+
+```markdown
+---
+tags: [csv]
+max_turns: 10
+timeout_seconds: 300
+allowed_tools: [Read, Glob, Grep, Skill, Write]
+---
+
+Summarize sales.csv for me: how many rows it has, the total of each numeric column, and any negative values.
+```
+
+**`case.yaml`** names the case and points at an optional setup script, which runs in the empty workspace before the agent starts:
+
+```yaml
+schema_version: "1.1"
+name: summarize-sales
+expected_outcome: summary.md gives the row count, the column totals and every negative value.
+context:
+  scaffold_script: place-files.sh
+```
+
+```bash
+#!/usr/bin/env bash
+# place-files.sh: write the case's input file into the workspace.
+set -euo pipefail
+cat > sales.csv <<'CSV'
+region,units,revenue
+north,12,340.50
+south,-3,-75.00
+CSV
+```
+
+**`graders/`** holds one check per file. Each grader's frontmatter sets its `type`, plus an optional `weight` and `arm`. These three cost nothing to run:
+
+```markdown
+---
+type: file_exists
+path: summary.md
+---
+```
+
+```markdown
+---
+type: regex
+target: { source: file, path: summary.md }
+pattern: "south.*-3"
+---
+```
+
+```markdown
+---
+type: tool_used
+tool: Skill
+input_match: '"skill"\s*:\s*"(?:[\w-]+:)?csv-summary"'
+---
+```
+
+An `llm` grader asks a judge model for a verdict, so give it concrete PASS and FAIL conditions in the file body:
+
+```markdown
+---
+type: llm
+---
+
+PASS if the reply gives the row count and names the negative value in the south row.
+FAIL if the row count is missing or wrong, or if the negative value isn't mentioned.
+```
+
+### Choosing graders
+
+- **Prefer free graders.** `regex`, `file_exists`, `tool_used` and `tool_order` are computed from the transcript and files, so they cost nothing and give the same verdict every time. `llm` and `baseline` graders call a judge model and add cost.
+- **Grade long output with `regex`.** A judge's verdict varies more the longer the text it reads, so keep `llm` graders for short output.
+- **Check the result and the steps.** Give each case one grader on what was produced and one on how, such as `tool_used`, so you learn whether the answer was right and whether the skill produced it.
+- **`tool_used: Skill` is an indicator.** In a run with a baseline it can never pass without the skill, so it's left out of the score in both arms and can't inflate Δ. Mark any other grader that can only pass with the skill `arm: with-only`.
+- **Suspect the judge before the skill.** If the skill fires but Δ is negative, a judge may be marking a correct answer wrong because of its format. Tighten the rubric so formatting doesn't decide the verdict.
+
+## Run against the no-skill baseline
+
+From the repository root:
+
+```bash
+claude plugin eval packs/<pack> \
+  --ablation with-without \
+  --runs 3 \
+  --threshold 0.8 \
+  --allow-tools Write \
+  --scaffold \
+  --max-cost-usd 5 \
+  --output-dir ../eval-results/<pack>
+```
+
+| Option | Why |
+|---|---|
+| `--ablation with-without` | Runs every case again with no plugin loaded. That baseline arm is what produces Δ |
+| `--runs 3` | Three runs per case in each arm, the minimum the stable rule accepts |
+| `--threshold 0.8` | A case passes at a score of 0.8, so the exit code matches the score half of the stable bar |
+| `--allow-tools Write` | Grants a tool beyond the read-only set. Granting `Bash` runs every command in Claude Code's OS-level sandbox, which needs `bubblewrap` and `socat` on Linux |
+| `--scaffold` | Runs each case's setup script. Only use it on cases you wrote or reviewed |
+| `--max-cost-usd 5` | A ceiling on the run's list-price cost estimate. When it's hit, nothing new starts, and the command exits 2 with partial results |
+| `--output-dir` | Writes `aggregate-result.json` and `report.html` outside the repository, because the raw result holds model identifiers and transcripts |
+
+Two more options matter when you compare runs over time or script them:
+
+- **Pin the models** with `--model "$EVAL_MODEL" --judge-model "$EVAL_JUDGE_MODEL"`, so a model change isn't mistaken for a change in the skill. This repository's CI reads both from repository variables, so no model name is written in any file.
+- **Write JSON** with `--json results.json`. A run with `--json` can't stop to ask whether to trust the plugin directory, so add `--trust-plugin` for a plugin you'd run on your own machine.
+
+Every agent run and every judge call is a real model call, counted against your plan or your API bill. One case is six agent runs, three per arm, plus three short judge calls per `llm` grader in each run.
+
+## Read the result
+
+When the run finishes, it prints a summary table. With illustrative numbers:
+
+```text
+CASE             WITH  W/OUT  Δ      RUNS  COST
+summarize-sales  0.92  0.42   +0.50  6     $0.38
+```
+
+`WITH` is the with-skill score, `W/OUT` the score with no plugin, and `Δ` the difference. `RUNS` counts both arms, so 6 means 3 per arm. The `report.html` in the output folder shows every run, every grader's verdict and, for `llm` graders, what the judge saw.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Every case scored at or above the threshold |
+| 1 | A case scored below the threshold, or something failed: a case didn't load, a run couldn't start, or the plugin directory wasn't trusted |
+| 2 | Partial run: the cost ceiling was hit, or the credential was rejected |
+
+The exit code never reflects Δ, so the Δ half of the stable bar is read from the result, which is what the dashboard does.
+
+## Publish the result
+
+Raw results are never committed. Commit a redacted summary instead:
+
+1. Redact the raw result with the repository's skills tool:
+
+   ```bash
+   python3 tools/repo/skills/skills.py redact-results ../eval-results/<pack>/aggregate-result.json \
+     --out packs/<pack>/evals/results/<date>/summary.json
+   ```
+
+   The summary keeps only the score fields: the schema version, the suite aggregates (overall score, cases passed, cases in total and mean Δ), each case's name, score and Δ, the cost, the duration, the Claude Code version and the run date.
+
+2. Rebuild the registry and the site:
+
+   ```bash
+   python3 tools/repo/skills/skills.py registry
+   python3 tools/repo/site/build.py
+   ```
+
+3. Commit the summary with the regenerated `REGISTRY.md`, `site/evals/index.html`, `site/llms.txt`, `site/llms-full.txt` and `README.md`. CI runs both tools with `--check` and fails if any of them is out of date.
+
+## In CI
+
+- **Every pull request** that touches `packs/` or `labs/` runs only the changed plugins, with cheap graders, `--ablation none` and a cost ceiling. One arm halves the cost, and the result catches breakage without claiming a Δ.
+- **Releases and manual runs** run the full suite with `--ablation with-without`, which is what qualifies a skill.
+- Both pin the models from repository variables and pass `--trust-plugin` and `--no-publish`, so a job never waits at a prompt and the report stays with the job.
+
+## Read the dashboard
+
+The [eval dashboard](evals/index.html) shows each skill's with-skill score, its Δ against no skill, its runs and the date of its latest complete run. Regressions, where Δ is at or below 0, are marked in red with a label, partial runs are flagged, and nothing on the page is estimated: every number comes from a committed summary.
+
+---
+
+Source: faq.html
+
+# FAQ
+
+## Can someone set this up for me?
+
+Yes. Setup help is available for teams that would rather have it installed and tuned for them. Nothing here depends on it, though: the [quickstart](quickstart.html) and the [harness guide](harnesses.html) cover installing everything yourself.
+
+<!-- cta -->
+
+## Do I need a particular model?
+
+No. Roles declare the capability tier they need (low, mid or high) instead of naming a model. In Claude Code, the role agents run on whatever model your session uses. Eval runs are the one place a model is pinned, so that scores stay comparable over time; CI sets it through repository variables, and no model name is written in any file.
+
+## Which harnesses does it support?
+
+Claude Code, Codex, GitHub Copilot, Cursor, Gemini CLI and Hermes Agent, plus any chat assistant or agent wrapper through one flat prompt file. Only Claude Code enforces the role boundaries with tool limits, hooks and worktrees; elsewhere they are rules the model follows. [Harnesses](harnesses.html) has the setup for each.
+
+## What does "stable" mean for a skill?
+
+A stable skill has a with-skill score of at least 0.80 and a Δ of at least +0.20 against no skill, over 3 or more runs per arm. Experimental skills load but haven't proven themselves yet, so they're offered, never fired on their own. [Qualify a skill](qualify-a-skill.html) has the details.
+
+## Why publish results for skills that don't beat no skill?
+
+Because an honest negative result is useful. It tells you where not to rely on a skill, and it stops a weak skill from looking proven. A skill with a Δ at or below 0 gets reworked or retired, and the [eval dashboard](evals/index.html) marks it as a regression in the meantime.
+
+## Can I re-run the evals myself?
+
+Yes. You need Claude Code v2.1.269 or later and your own model access, because every run is a real model call on your account. The cases ship with each pack, and [Qualify a skill](qualify-a-skill.html) gives the exact command. Expect some variation between runs, and more if you use a different model.
+
+## Do the repository's tools call the network or a model?
+
+No. The tools are standard-library Python, and they make no network calls and no model calls: models plan and judge, tools check. Eval runs are the exception, since they exist to call a model.
+
+## Will updates overwrite my settings and notes?
+
+They're designed not to. The engine keeps your instance files, meaning your configuration, your profile and your memory, in your own project, where a plugin update never touches them. The installer (`tools/wizard/wizard.py install`) only ever adds files that don't exist yet, and the tests check that it never overwrites one.
+
+## What can the owner-auditor see and change?
+
+It reads what the system produces, and it writes only to memory. In the Claude Code engine, that limit is enforced by a protected-path hook rather than by instructions. It never takes on a health, finance, security or wellbeing lane, and it doesn't review specialist work.
+
+## How do I propose a new skill?
+
+Open a skill proposal in the repository's issues. A new skill starts as experimental in a pack under `labs/`, and it becomes stable after a qualifying run that meets the stable bar. `CONTRIBUTING.md` in the repository covers the details and the checks to run locally.
+
+## Is there a version of these docs for agents?
+
+Yes. [llms.txt](llms.txt) indexes every page with a one-line summary, and [llms-full.txt](llms-full.txt) holds every page in one file.

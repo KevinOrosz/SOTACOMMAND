@@ -1,0 +1,241 @@
+{
+  "$schema": "./manifest.schema.json",
+  "schema_version": "1",
+  "description": "First-pass manifest for the synthetic tree in fixtures/fake-command. A dry run flags every marker no safe rule can rewrite; manifest.handled.example.json is the same manifest after the owner has handled those flags.",
+  "defaults": {
+    "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map"]
+  },
+  "persona_map": {
+    "SAGE": "orchestrator",
+    "RUNE": "researcher",
+    "FLUX": "builder",
+    "BEACON": "owner-auditor",
+    "HERALD": "sensor",
+    "EMBER": "repurposer"
+  },
+  "owner_terms": {
+    "Avery Example": "the owner",
+    "Avery": "the owner",
+    "avery@example.invalid": "the owner"
+  },
+  "path_map": {
+    "~/hq/": "",
+    "~/hq": ".",
+    "~/.claude/": "~/.claude/",
+    "AGENTS/SAGE/": "engine/roles/orchestrator/",
+    "AGENTS/RUNE/": "engine/roles/researcher/",
+    "AGENTS/FLUX/": "engine/roles/builder/",
+    "AGENTS/BEACON/": "engine/roles/owner-auditor/",
+    "AGENTS/HERALD/": "engine/roles/sensor/",
+    "AGENTS/EMBER/": "engine/roles/repurposer/"
+  },
+  "rewrite_patterns": [
+    {
+      "id": "rule-code-label",
+      "pattern": "^(\\s*(?:[-*+]|\\d+[.)])\\s+)(?:Rule\\s+\\d+|lesson\\s*#\\d+)\\s*[:.]\\s+",
+      "replace": "\\1",
+      "description": "a house rule code labelling a list item"
+    },
+    {
+      "id": "rule-code-inline-label",
+      "pattern": "\\((?:Rule\\s+\\d+|lesson\\s*#\\d+):\\s*",
+      "replace": "(",
+      "description": "a house rule code labelling a parenthetical"
+    },
+    {
+      "id": "rule-code-parenthetical",
+      "pattern": "\\s*\\((?:see\\s+)?(?:Rule\\s+\\d+|lesson\\s*#\\d+)\\)",
+      "replace": "",
+      "description": "a parenthetical house rule reference"
+    },
+    {
+      "id": "dated-ruling-parenthetical",
+      "pattern": "\\s*\\(\\b[A-Z][a-z]+-(?:ordered|approved)\\s+\\d{1,2}-\\d{1,2}\\)",
+      "replace": "",
+      "description": "a parenthetical dated ruling; the plain status stays"
+    },
+    {
+      "id": "skill-rename",
+      "pattern": "\\bherald-(schedule|brief)\\b",
+      "replace": "sensor-\\1",
+      "description": "skills renamed to their role-neutral names"
+    }
+  ],
+  "drop_patterns": [
+    {
+      "id": "private-block",
+      "start": "<!--\\s*private\\s*-->",
+      "end": "<!--\\s*/private\\s*-->",
+      "description": "owner-only notes between private markers"
+    },
+    {
+      "id": "lineage-line",
+      "pattern": "^\\s*(?:Lineage|Provenance|Source log):",
+      "description": "lineage lives in the private repo only"
+    }
+  ],
+  "flag_patterns": [
+    {
+      "id": "vendor-model",
+      "pattern": "\\b[Cc]laude[- ](?![Cc]ode\\b)(?:[A-Za-z]+[- ])?\\d[\\w.-]*",
+      "description": "vendor model name; ship a capability tier (low, mid, high) instead"
+    },
+    {
+      "id": "mythic-framing",
+      "pattern": "(?i)\\b(?:mythos|wise kings?|sacred|pilgrimage|altar|prophec(?:y|ies)|divine)\\b",
+      "description": "mythic framing belongs in an optional persona pack"
+    },
+    {
+      "id": "owner-identity",
+      "pattern": "(?i)\\b(?:he|she|they) (?:is|are) the brand\\b",
+      "description": "owner identity; restate it as a neutral mission"
+    },
+    {
+      "id": "client-name",
+      "pattern": "(?i)\\bnorthwind\\b",
+      "description": "client name"
+    },
+    {
+      "id": "rule-code",
+      "pattern": "(?i)\\b(?:rule\\s+\\d+|lesson\\s*#\\s*\\d+)\\b",
+      "description": "house rule code no safe rule removed; state the principle in prose"
+    },
+    {
+      "id": "dated-ruling",
+      "pattern": "\\b[A-Z][a-z]+-(?:ordered|approved)\\b|\\b(?:ordered|approved)\\s+\\d{1,2}-\\d{1,2}\\b",
+      "description": "ruling provenance no safe rule removed; keep the plain status only"
+    },
+    {
+      "id": "email-address",
+      "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)+\\b",
+      "description": "email address"
+    }
+  ],
+  "never_export": [
+    "**/KB/**",
+    "**/output/**",
+    "**/tasks/**",
+    "HANDOFF.md",
+    "fixture-*.md",
+    "planted-markers.json",
+    ".env*",
+    "SKILLS/REGISTRY.md"
+  ],
+  "frontmatter": {
+    "drop_keys": ["eval"],
+    "list_separator": ", "
+  },
+  "roles": {
+    "orchestrator": {
+      "description": "Main session role, not a delegate: takes intake from the owner, routes each task to the one role that owns it, sequences the work, synthesizes results and accepts or returns them.",
+      "tier": "high",
+      "main": true,
+      "allowed-tools": "Agent(researcher, builder, owner-auditor, sensor, repurposer), Read, Grep, Glob, Write, Edit, Skill, Workflow",
+      "write-paths": ["memory/**"]
+    },
+    "researcher": {
+      "description": "Delegate research, analysis and specs: gather evidence, test a thesis, and turn findings into a build-ready spec with a self-scored rubric. Not for building software or producing content.",
+      "tier": "high",
+      "allowed-tools": "Read, Grep, Glob, WebFetch, WebSearch, Write, Edit, Bash, Skill"
+    },
+    "builder": {
+      "description": "Delegate code, automation and test work that changes files: reads before writing, makes surgical changes, and returns a working artifact with verification output. Works in an isolated git worktree.",
+      "tier": "mid",
+      "isolation": "worktree",
+      "allowed-tools": "Read, Grep, Glob, Write, Edit, Bash, Skill"
+    },
+    "owner-auditor": {
+      "description": "Delegate an audit of what the agent system costs its owner: interventions, time and repeated corrections. Returns a burden ledger, the top defect, one leverage fix and the decision left to the owner. Reads anything; writes only under memory/.",
+      "tier": "mid",
+      "allowed-tools": "Read, Grep, Glob, Write, Edit",
+      "disallowed-tools": "Bash, PowerShell, NotebookEdit",
+      "write-paths": ["memory/**"]
+    },
+    "sensor": {
+      "description": "Delegate reading public audience evidence (comments, threads, reviews) into one periodic brief with verbatim language and one falsifiable bet. Read-only: no account access, no replies, no content creation.",
+      "tier": "low",
+      "allowed-tools": "Read, Grep, Glob, WebFetch, WebSearch",
+      "disallowed-tools": "Write, Edit, NotebookEdit, Bash, PowerShell, mcp__*"
+    },
+    "repurposer": {
+      "description": "Delegate turning one approved source piece into platform-native drafts, in the platform order set in the project config. Drafts only: it never posts, uploads, schedules or invents material.",
+      "tier": "mid",
+      "allowed-tools": "Read, Grep, Glob, Write, Edit, Skill",
+      "disallowed-tools": "Bash, PowerShell, WebFetch, mcp__*"
+    }
+  },
+  "plugins": {
+    "labs/ops": {
+      "name": "ops-skills",
+      "description": "Session close-out and loop briefs, extracted from a working agent team. Experimental until each skill passes its eval.",
+      "version": "0.1.0"
+    },
+    "labs/quality": {
+      "name": "quality-skills",
+      "description": "A voice audit that checks drafts against the owner's voice rules. Experimental until it passes its eval.",
+      "version": "0.1.0"
+    },
+    "labs/knowledge": {
+      "name": "knowledge-skills",
+      "description": "Cross-references notes in a knowledge base. Experimental until it passes its eval.",
+      "version": "0.1.0"
+    },
+    "labs/audience": {
+      "name": "audience-skills",
+      "description": "Scheduling and writing the sensor's audience brief. Experimental until each skill passes its eval.",
+      "version": "0.1.0"
+    }
+  },
+  "files": [
+    {"from": "AGENTS.md", "to": "AGENTS.md", "note": "canonical boot file"},
+    {"from": "CLAUDE.md", "to": "engine/protocols/engagement.md", "note": "rules of engagement, restated as principles"},
+
+    {"from": "AGENTS/SAGE/soul.md", "to": "engine/roles/orchestrator/soul.md"},
+    {"from": "AGENTS/SAGE/protocols.md", "to": "engine/protocols/routing.md", "select": {"start": "^## Routing", "before": "^## "}},
+    {"from": "AGENTS/SAGE/protocols.md", "to": "engine/protocols/pushback.md", "select": {"start": "^## Pushback", "before": "^## "}},
+    {"from": "AGENTS/SAGE/protocols.md", "to": "engine/protocols/convergence.md", "select": {"start": "^## Convergence", "before": "^## "}},
+    {"from": "AGENTS/SAGE/protocols.md", "to": "engine/protocols/token-discipline.md", "select": {"start": "^## Token discipline", "before": "^## "}},
+
+    {"from": "AGENTS/RUNE/soul.md", "to": "engine/roles/researcher/soul.md"},
+    {"from": "AGENTS/RUNE/program.md", "to": "engine/roles/researcher/program.md"},
+    {"from": "AGENTS/RUNE/prepare.md", "to": "engine/roles/researcher/prepare.md"},
+    {"from": "AGENTS/RUNE/rubric.md", "to": "engine/roles/researcher/rubric.md"},
+
+    {"from": "AGENTS/FLUX/soul.md", "to": "engine/roles/builder/soul.md"},
+    {"from": "AGENTS/FLUX/program.md", "to": "engine/roles/builder/program.md"},
+
+    {"from": "AGENTS/BEACON/soul.md", "to": "engine/roles/owner-auditor/soul.md"},
+    {"from": "AGENTS/BEACON/program.md", "to": "engine/roles/owner-auditor/program.md"},
+    {"from": "AGENTS/BEACON/rubric.md", "to": "engine/roles/owner-auditor/rubric.md"},
+    {"from": "AGENTS/BEACON/checks.md", "to": "engine/roles/owner-auditor/checks.md"},
+
+    {"from": "AGENTS/HERALD/soul.md", "to": "engine/roles/sensor/soul.md"},
+    {"from": "AGENTS/HERALD/program.md", "to": "engine/roles/sensor/program.md"},
+    {"from": "AGENTS/HERALD/rubric.md", "to": "engine/roles/sensor/rubric.md"},
+
+    {"from": "AGENTS/EMBER/soul.md", "to": "engine/roles/repurposer/soul.md"},
+    {"from": "AGENTS/EMBER/program.md", "to": "engine/roles/repurposer/program.md"},
+    {"from": "AGENTS/EMBER/rubric.md", "to": "engine/roles/repurposer/rubric.md"},
+
+    {"from": "SKILLS/session-close.md", "to": "labs/ops/skills/session-close/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"]},
+    {"from": "SKILLS/loop-brief.md", "to": "labs/ops/skills/loop-brief/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"]},
+    {"from": "SKILLS/voice-audit.md", "to": "labs/quality/skills/voice-audit/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"]},
+    {"from": "SKILLS/kb-crossref.md", "to": "labs/knowledge/skills/kb-crossref/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"]},
+    {"from": "SKILLS/herald-schedule.md", "to": "labs/audience/skills/sensor-schedule/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"],
+     "note": "experimental, so it goes to labs/; renamed to the role-neutral name"},
+    {"from": "SKILLS/herald-brief.md", "to": "labs/audience/skills/sensor-brief/SKILL.md",
+     "rewrites": ["drop_patterns", "rewrite_patterns", "path_map", "owner_terms", "persona_map", "frontmatter"],
+     "note": "retired; ships as a redirect stub"},
+
+    {"from": "tools/session.sh", "to": "engine/scripts/session.sh"},
+    {"from": "tools/verify.sh", "to": "engine/scripts/verify.sh"},
+    {"from": "tools/recall.sh", "to": "engine/scripts/recall.sh"},
+    {"from": "tools/command-router.py", "to": "engine/scripts/router.py"},
+    {"from": "tools/brain-doctor.py", "to": "engine/scripts/doctor.py"}
+  ]
+}

@@ -1,0 +1,364 @@
+{
+  "version": 1,
+  "description": "Production leak-gate rules. Every field is documented in tools/repo/leakgate/README.md. Private names never go here: use a hashed list or the LEAKGATE_DENYLIST secret.",
+  "regex": [
+    {
+      "id": "email",
+      "description": "Email addresses. Reserved example domains, SSH remotes, no-reply senders and @2x image names are not addresses anyone owns.",
+      "patterns": [
+        "(?<![A-Za-z0-9._%+-])[A-Za-z0-9][A-Za-z0-9._%+-]{0,63}@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,24}(?![A-Za-z0-9-])"
+      ],
+      "exceptions": [
+        "(?i)[^@\\s]+@(?:[a-z0-9-]+\\.)*example\\.(?:com|org|net)",
+        "(?i)[^@\\s]+@(?:[a-z0-9-]+\\.)*(?:example|invalid|test|localhost)",
+        "(?i)git@[a-z0-9.-]+",
+        "(?i)(?:no-?reply|donotreply|do-not-reply)@[a-z0-9.-]+",
+        "(?i)[^@\\s]+@\\d+(?:\\.\\d+)?x\\.(?:png|jpe?g|gif|webp|avif|svg)"
+      ],
+      "always_flag": []
+    },
+    {
+      "id": "home-path",
+      "description": "Absolute home directories on macOS and Linux. They name the account that wrote the file. Use ~ or $HOME instead.",
+      "patterns": [
+        "(?<![A-Za-z0-9_.~$%-])/(?:Users|home)/[A-Za-z0-9_][A-Za-z0-9._-]*"
+      ],
+      "exceptions": [
+        "/Users/Shared",
+        "/home/runner",
+        "/home/linuxbrew"
+      ]
+    },
+    {
+      "id": "windows-home-path",
+      "description": "Absolute home directories on Windows, with single or JSON-escaped backslashes. Use %USERPROFILE% instead.",
+      "patterns": [
+        "(?<![A-Za-z0-9])[A-Za-z]:\\\\{1,2}(?:Users|Documents and Settings)\\\\{1,2}[A-Za-z0-9_][A-Za-z0-9._-]*"
+      ],
+      "ignore_case": true,
+      "exceptions": [
+        "(?i)[a-z]:\\\\{1,2}(?:users|documents and settings)\\\\{1,2}(?:public|default|all|defaultuser0)"
+      ]
+    },
+    {
+      "id": "private-key",
+      "description": "PEM and PuTTY private-key headers.",
+      "patterns": [
+        "-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----",
+        "PuTTY-User-Key-File-\\d+:"
+      ]
+    },
+    {
+      "id": "aws-access-key",
+      "description": "AWS access key ids. The documentation example key is allowed.",
+      "patterns": [
+        "(?<![A-Za-z0-9])(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16}(?![A-Za-z0-9])"
+      ],
+      "exceptions": [
+        "[A-Z0-9]*EXAMPLE"
+      ]
+    },
+    {
+      "id": "aws-secret-key",
+      "description": "AWS secret access keys assigned to a recognisable variable name.",
+      "patterns": [
+        "(?i)aws_?secret_?(?:access_?)?key(?:_id)?[\\\"']?[ \\t]*[:=][ \\t]*[\\\"']?[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+])"
+      ],
+      "exceptions": [
+        "(?i).*EXAMPLEKEY.*"
+      ]
+    },
+    {
+      "id": "github-token",
+      "description": "GitHub personal, OAuth, app and refresh tokens, and fine-grained PATs.",
+      "patterns": [
+        "(?<![A-Za-z0-9_])gh[pousr]_[A-Za-z0-9]{36,255}(?![A-Za-z0-9_])",
+        "(?<![A-Za-z0-9_])github_pat_[A-Za-z0-9_]{50,255}"
+      ]
+    },
+    {
+      "id": "slack-token",
+      "description": "Slack tokens and incoming-webhook URLs.",
+      "patterns": [
+        "(?<![A-Za-z0-9])xox[abposr]-[A-Za-z0-9-]{10,}",
+        "https://hooks\\.slack\\.com/services/T[A-Z0-9]{6,}/B[A-Z0-9]{6,}/[A-Za-z0-9]{20,}"
+      ]
+    },
+    {
+      "id": "api-key",
+      "description": "Common vendor API-key shapes: sk- secret keys, Google, Stripe, npm, PyPI, GitLab and Hugging Face tokens.",
+      "patterns": [
+        "(?<![A-Za-z0-9_-])sk-ant-(?:api|admin|sid)\\d{2}-[A-Za-z0-9_-]{20,}",
+        "(?<![A-Za-z0-9_-])sk-(?:proj-|svcacct-|admin-)?(?=[A-Za-z0-9_-]*\\d)(?=[A-Za-z0-9_-]*[A-Z])[A-Za-z0-9_-]{32,}",
+        "(?<![A-Za-z0-9_-])AIza[0-9A-Za-z_-]{35}(?![A-Za-z0-9_-])",
+        "(?<![A-Za-z0-9_])[rs]k_(?:live|test)_[0-9A-Za-z]{16,}",
+        "(?<![A-Za-z0-9_])npm_[A-Za-z0-9]{36}(?![A-Za-z0-9])",
+        "pypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{50,}",
+        "(?<![A-Za-z0-9_-])glpat-[A-Za-z0-9_-]{20,}",
+        "(?<![A-Za-z0-9_])hf_[A-Za-z0-9]{34,}(?![A-Za-z0-9])"
+      ]
+    },
+    {
+      "id": "jwt",
+      "description": "JSON Web Tokens (they often carry personal claims).",
+      "patterns": [
+        "(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{8,}\\.eyJ[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9_-]{8,}"
+      ]
+    },
+    {
+      "id": "rule-code",
+      "description": "Numbered house rules. Shipped files state principles in prose, never by number.",
+      "patterns": [
+        "(?<![A-Za-z0-9_])(?:Rule|RULE)[ \\t]*#?[ \\t]*\\d{1,3}(?![A-Za-z0-9_])"
+      ]
+    },
+    {
+      "id": "lesson-code",
+      "description": "Numbered lessons (the word lesson, a hash sign and a number).",
+      "patterns": [
+        "(?i)(?<![A-Za-z0-9_])lessons?[ \\t]*#[ \\t]*\\d{1,4}(?![A-Za-z0-9_])"
+      ]
+    },
+    {
+      "id": "dated-ruling",
+      "description": "Dated-ruling provenance: the word ordered followed by a month-day date.",
+      "patterns": [
+        "(?i)(?<![A-Za-z0-9_])ordered[ \\t]+(?:on[ \\t]+)?\\d{1,2}[-/]\\d{1,2}(?:[-/]\\d{2,4})?(?![A-Za-z0-9_])"
+      ]
+    },
+    {
+      "id": "ordered-provenance",
+      "description": "A capitalised name hyphenated to the word ordered. Ordinary compound adjectives are not flagged.",
+      "patterns": [
+        "(?<![A-Za-z0-9_-])(?!(?:Well|Time|Insertion|Partially|Totally|Fully|Strictly|Weakly|Lexically|Lexicographically|Topologically|Alphabetically|Chronologically|Numerically|Randomly|Reverse|Custom|Special|Back|Pre|Re|Un|Dis|Mail|Self|Over|Under|Key|Value|Date|Priority|Hash|Index|Rank|Size|Length|Frequency|Doubly|Singly)-ordered(?![A-Za-z]))[A-Z][A-Za-z]*-ordered(?![A-Za-z0-9_-])"
+      ]
+    },
+    {
+      "id": "model-id",
+      "description": "Vendor model identifiers: a model-family name followed by a version number. Shipped files name capability tiers instead; eval results may record the pinned model.",
+      "patterns": [
+        {
+          "pattern": "(?<![A-Za-z0-9_-])claude-(?:opus-|sonnet-|haiku-|instant-)?\\d[A-Za-z0-9.@:_-]*",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9])Claude[ \\t]+(?:Opus|Sonnet|Haiku|Instant)[ \\t]+\\d+(?:\\.\\d+)?(?![A-Za-z0-9])"
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9])Claude[ \\t]+\\d+(?:\\.\\d+)?(?:[ \\t]+(?:Opus|Sonnet|Haiku))?(?![A-Za-z0-9]|\\.[0-9])"
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9])(?:Opus|Sonnet|Haiku)[ \\t]+\\d+(?:\\.\\d+)?(?![A-Za-z0-9]|\\.[0-9])"
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])(?:chat)?gpt[- \\t]?\\d(?:\\.\\d+)?(?:[A-Za-z0-9.]*)(?:-[A-Za-z0-9.]+)*",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])gpt-oss-\\d+b?(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])o[1-9](?:-(?:mini|pro|preview|high|low|deep-research))+(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])(?:text-)?davinci-\\d{3}(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])dall-?e[- \\t]?\\d(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])gemini-\\d+(?:\\.\\d+)?(?:-[A-Za-z0-9.]+)*",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9])Gemini[ \\t]+\\d+(?:\\.\\d+)?(?:[ \\t]+(?:Pro|Flash-Lite|Flash|Ultra|Nano))?(?![A-Za-z0-9]|\\.[0-9])"
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])gemma[- \\t]?\\d+(?:\\.\\d+)?(?:-[A-Za-z0-9.]+)*",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9])PaLM[- \\t]?2(?![A-Za-z0-9])"
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])llama[- \\t]?\\d+(?:\\.\\d+)?(?:[- \\t]\\d+b)?(?![A-Za-z0-9]|\\.[0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])(?:mistral|mixtral|codestral|ministral|magistral|pixtral|devstral)[- \\t]?(?:(?:large|medium|small|tiny|nemo|saba)[- \\t]?)?(?:\\d+x)?\\d+(?:\\.\\d+)?b?(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])deepseek[- \\t]?(?:v|r|coder[- \\t]?v?|chat[- \\t]?v?)?\\d+(?:\\.\\d+)?(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])qwen[- \\t]?\\d+(?:\\.\\d+)?(?:-[A-Za-z0-9.]+)*",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])grok[- \\t]?\\d+(?:\\.\\d+)?(?![A-Za-z0-9]|\\.[0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])phi-\\d+(?:\\.\\d+)?(?:-(?:mini|medium|small|vision|instruct))*(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])nova-(?:pro|lite|micro|premier)-v\\d+(?![A-Za-z0-9])",
+          "ignore_case": true
+        },
+        {
+          "pattern": "(?<![A-Za-z0-9_-])command-(?:r7b|r-plus|r|a)-\\d{2}-\\d{4}(?![A-Za-z0-9])",
+          "ignore_case": true
+        }
+      ]
+    }
+  ],
+  "terms": [
+    {
+      "id": "private-marker",
+      "description": "Markers that say a document must not ship. All capitals, so case-sensitive.",
+      "terms": [
+        "INTERNAL ONLY",
+        "DO NOT SHIP",
+        "DO NOT PUBLISH",
+        "NOT FOR PUBLICATION"
+      ]
+    }
+  ],
+  "denylist_files": [],
+  "hashed_denylist": {
+    "files": [],
+    "salt_env": "LEAKGATE_SALT"
+  },
+  "env_denylist": {
+    "variable": "LEAKGATE_DENYLIST"
+  },
+  "paths": [
+    {
+      "id": "internal-dir",
+      "description": "The private staging folder. Nothing under it ever ships.",
+      "globs": [
+        "internal/**"
+      ]
+    },
+    {
+      "id": "private-dir",
+      "description": "Knowledge base, outputs and task logs from the private workspace.",
+      "globs": [
+        "**/KB/**",
+        "**/output/**",
+        "**/tasks/**"
+      ]
+    },
+    {
+      "id": "env-file",
+      "description": "Environment files hold credentials.",
+      "globs": [
+        "**/.env*"
+      ]
+    },
+    {
+      "id": "owner-fixture",
+      "description": "Fixtures built from the owner's real data.",
+      "globs": [
+        "**/fixture-*.md"
+      ]
+    },
+    {
+      "id": "handoff-file",
+      "description": "Session handoff notes (sitreps) from the private workspace.",
+      "globs": [
+        "**/HANDOFF.md"
+      ]
+    }
+  ],
+  "allow": [
+    {
+      "id": "eval-results-model-ids",
+      "reason": "Eval results are data: a reproducible run must record the pinned model. Everywhere else, files name capability tiers.",
+      "paths": [
+        "**/evals/results/**"
+      ],
+      "rules": [
+        "model-id"
+      ]
+    },
+    {
+      "id": "codeowners-owner-handle",
+      "reason": "CODEOWNERS must name the owner's GitHub handle. Only handle-shaped matches from name lists are allowed, and only in this one file.",
+      "paths": [
+        ".github/CODEOWNERS"
+      ],
+      "types": [
+        "term",
+        "hashed-term",
+        "env-denylist"
+      ],
+      "match": "@?[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}"
+    },
+    {
+      "id": "memory-templates",
+      "reason": "The engine ships empty memory templates (the T1 sitrep is named HANDOFF.md). They hold structure, never session content, and content rules still scan them.",
+      "paths": [
+        "**/templates/memory/HANDOFF.md"
+      ],
+      "rules": [
+        "handoff-file"
+      ]
+    },
+    {
+      "id": "rules-file-markers",
+      "reason": "This rules file has to spell out the private markers it blocks. The exception covers that one rule in this one file.",
+      "paths": [
+        "tools/repo/leakgate/rules.json"
+      ],
+      "rules": [
+        "private-marker"
+      ]
+    },
+    {
+      "id": "repo-owner-handle",
+      "reason": "The repository and its companion live under the owner's GitHub handle, so install commands and cross-links must name it. Only the exact handle is allowed; the owner's name stays blocked outside NOTICE.",
+      "paths": [
+        "**"
+      ],
+      "types": [
+        "term",
+        "hashed-term",
+        "env-denylist"
+      ],
+      "match": "KevinOrosz"
+    },
+    {
+      "id": "notice-attribution",
+      "reason": "Apache-2.0 section 4(d): NOTICE must name the copyright holder so forks keep the attribution. Name-list matches are allowed only in the root NOTICE file.",
+      "paths": [
+        "/NOTICE"
+      ],
+      "types": [
+        "term",
+        "hashed-term",
+        "env-denylist"
+      ]
+    },
+    {
+      "id": "planted-corpus",
+      "reason": "Deliberate leaks that measure the gate's recall. Allowed only in bench mode (check --mode bench); a normal check of these files fails, and the bench compares every finding there with expected.json.",
+      "paths": [
+        "fixtures/leak-corpus/planted/**"
+      ],
+      "rules": [
+        "*"
+      ],
+      "modes": [
+        "bench"
+      ]
+    }
+  ]
+}

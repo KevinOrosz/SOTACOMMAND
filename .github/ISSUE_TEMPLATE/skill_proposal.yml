@@ -1,0 +1,112 @@
+name: Skill proposal
+description: Propose a new skill, or evidence that would promote an experimental one to stable.
+title: "[skill] "
+labels: [enhancement, skill]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A skill is an Agent Skills folder (a `SKILL.md`, plus optional references, scripts and
+        eval cases) inside a plugin under `packs/` (stable) or `labs/` (experimental).
+
+        New skills start as experimental. A skill becomes **stable** only after a recorded eval
+        run shows both:
+
+        - a with-skill score of at least 0.8
+        - a gain (Δ) of at least +0.2 over the same cases run with no skill
+
+        That takes at least 3 runs per arm on the pinned model. `CONTRIBUTING.md` has the details.
+
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill name
+      description: Lowercase letters, digits and hyphens, at most 64 characters. It becomes the folder name.
+      placeholder: csv-summary
+    validations:
+      required: true
+
+  - type: input
+    id: pack
+    attributes:
+      label: Pack
+      description: The pack it belongs in, or a name for a new one. Leave it empty if you're unsure.
+      placeholder: example-pack
+
+  - type: textarea
+    id: trigger
+    attributes:
+      label: When should an agent use it?
+      description: This becomes the skill's `description`, which agents read to decide when to load it. At most 1024 characters.
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What does it do, and what does it produce?
+      description: Inputs, steps and outputs. Name any files it writes.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: roles
+    attributes:
+      label: Roles that would use it
+      multiple: true
+      options:
+        - orchestrator
+        - researcher
+        - builder
+        - owner-auditor
+        - sensor
+        - repurposer
+
+  - type: dropdown
+    id: min-tier
+    attributes:
+      label: Smallest model tier it needs
+      description: A capability tier, not a model name.
+      options:
+        - low
+        - mid
+        - high
+
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Gate
+      description: A mandatory gate fires in every situation it matches. Most skills have no gate.
+      options:
+        - No gate
+        - Mandatory gate
+
+  - type: textarea
+    id: evals
+    attributes:
+      label: How would we prove it works?
+      description: |
+        At least three eval cases. For each one, give the prompt, the input files and the graders:
+        regex, file_exists, tool_used, or an llm grader with concrete pass and fail wording.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence so far
+      description: |
+        Results you already have: with-skill score, Δ against no skill, and runs per arm.
+        Paste redacted summaries only, never raw results that name models.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before you submit
+      options:
+        - label: Eval inputs are synthetic, with no real client, customer or personal data.
+          required: true
+        - label: The skill names no vendor model; it uses capability tiers.
+          required: true
+        - label: I read CONTRIBUTING.md.
+          required: true

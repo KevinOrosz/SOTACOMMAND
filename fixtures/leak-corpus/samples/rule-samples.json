@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "description": "TEST-ONLY samples for every production content rule in tools/repo/leakgate/rules.json. Each 'flag' sample must produce a finding of that rule; each 'pass' sample must produce no finding at all. Secrets here are invented and deliberately fake.",
+  "rules": {
+    "email": {
+      "flag": [
+        "jane.doe@northwind-retreats.com",
+        "ops+alerts@studio.co.uk",
+        "Contact: a.b@corp.io.",
+        "mailto:owner@realmail.net",
+        "<li>sam_99@mail-host.org</li>"
+      ],
+      "pass": [
+        "support@example.com",
+        "dev@sub.example.org",
+        "x@example.net",
+        "someone@example.invalid",
+        "dev@mail.example",
+        "qa@host.test",
+        "git@github.com:owner/repo.git",
+        "noreply@github.com",
+        "logo@2x.png",
+        "hero@3x.webp",
+        "@scope/package",
+        "npm install @google/gemini-cli@0.9.0",
+        "uses: actions/checkout@v4.1.7",
+        "user@localhost"
+      ]
+    },
+    "home-path": {
+      "flag": [
+        "/Users/jdoe/Documents",
+        "cd /home/jdoe",
+        "file:///Users/jdoe/notes.md",
+        "\"/home/jdoe/.config\"",
+        "C:/Users/jdoe/AppData",
+        "path=/home/jdoe"
+      ],
+      "pass": [
+        "~/projects",
+        "$HOME/.config",
+        "/Users/<name>/",
+        "/home/<user>/",
+        "/Users/Shared/tools",
+        "/home/runner/work/x/x",
+        "/home/linuxbrew/.linuxbrew/bin",
+        "src/Users/List.tsx",
+        "GET /users/42/orders",
+        "the /home partition",
+        "/usr/local/bin"
+      ]
+    },
+    "windows-home-path": {
+      "flag": [
+        "C:\\Users\\jdoe\\Desktop",
+        "c:\\users\\jdoe",
+        "\"C:\\\\Users\\\\jdoe\\\\x\"",
+        "D:\\Documents and Settings\\jdoe\\Notes"
+      ],
+      "pass": [
+        "C:\\Users\\Public\\Documents",
+        "C:\\Users\\Default\\NTUSER.DAT",
+        "%USERPROFILE%\\Desktop",
+        "C:\\Program Files\\sotacommand",
+        "C:\\Users\\<name>\\"
+      ]
+    },
+    "private-key": {
+      "flag": [
+        "-----BEGIN RSA PRIVATE KEY-----",
+        "-----BEGIN PRIVATE KEY-----",
+        "-----BEGIN OPENSSH PRIVATE KEY-----",
+        "-----BEGIN ENCRYPTED PRIVATE KEY-----",
+        "-----BEGIN PGP PRIVATE KEY BLOCK-----",
+        "PuTTY-User-Key-File-3: ssh-ed25519"
+      ],
+      "pass": [
+        "-----BEGIN PUBLIC KEY-----",
+        "-----BEGIN CERTIFICATE-----",
+        "-----END RSA PRIVATE KEY-----",
+        "private key files belong in a vault"
+      ]
+    },
+    "aws-access-key": {
+      "flag": [
+        "AKIAPLANTED234567ABC",
+        "key=ASIAPLANTED234567XYZ"
+      ],
+      "pass": [
+        "AKIAIOSFODNN7EXAMPLE",
+        "the AKIA prefix",
+        "AKIAPLANTED234567ABCD"
+      ]
+    },
+    "aws-secret-key": {
+      "flag": [
+        "aws_secret_access_key = PLANTEDplantedPLANTEDplantedPLANTEDplant",
+        "AWS_SECRET_ACCESS_KEY: \"PLANTEDplantedPLANTEDplantedPLANTEDplant\""
+      ],
+      "pass": [
+        "aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        "aws_secret_access_key = ${{ secrets.AWS_SECRET }}"
+      ]
+    },
+    "github-token": {
+      "flag": [
+        "ghp_PLANTEDplantedPLANTEDplantedPLANTEDp",
+        "token: gho_PLANTEDplantedPLANTEDplantedPLANTEDplant",
+        "github_pat_PLANTED_planted0PLANTED_planted0PLANTED_planted0PLANTED_planted0PLANTE"
+      ],
+      "pass": [
+        "ghp_",
+        "ghp_short",
+        "the ghp_ prefix",
+        "github_pat_ prefix"
+      ]
+    },
+    "slack-token": {
+      "flag": [
+        "x{{seal}}oxb-000000000000-PLANTEDplanted",
+        "https://hooks.slack.com/services/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nted"
+      ],
+      "pass": [
+        "xoxb-",
+        "x{{seal}}oxb-short",
+        "https://hooks.slack.com/services/"
+      ]
+    },
+    "api-key": {
+      "flag": [
+        "sk-ant-api03-PLANTEDfakeKEY0PLANTEDfakeKEY0PLANTEDfak",
+        "sk-proj-PLANTED0plantedPLANTED0plantedPLANTED0pl",
+        "AIzaPLANTEDplantedPLANTEDplantedPLANTED",
+        "r{{seal}}k_test_PLANTEDplantedPLANTEDpla",
+        "npm_PLANTEDplantedPLANTEDplantedPLANTEDp",
+        "pypi-AgEIcHlwaS5vcmcPLANTEDplantedPLANTEDplantedPLANTEDplantedPLANTEDplanted",
+        "glpat-PLANTEDplantedPLANTEDp",
+        "h{{seal}}f_PLANTEDplantedPLANTEDplantedPLANTE"
+      ],
+      "pass": [
+        "sk-learn",
+        "sk-this-is-not-a-key-just-a-long-kebab-case-name",
+        "AIza",
+        "npm_config_cache",
+        "h{{seal}}f_hub_download"
+      ]
+    },
+    "jwt": {
+      "flag": [
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwbGFudGVkIn0.PLANTEDsigPLANTEDs"
+      ],
+      "pass": [
+        "eyJ",
+        "eyJhbGciOiJIUzI1NiJ9 on its own"
+      ]
+    },
+    "rule-code": {
+      "flag": [
+        "Rule 6",
+        "Rule #12",
+        "RULE 3",
+        "per Rule  9."
+      ],
+      "pass": [
+        "rule 6 in lowercase",
+        "Rules for contributors",
+        "a rule of thumb",
+        "Rule 2026"
+      ]
+    },
+    "lesson-code": {
+      "flag": [
+        "lesson #9",
+        "Lesson #14",
+        "lessons #3",
+        "LESSON # 2"
+      ],
+      "pass": [
+        "lesson 9",
+        "lesson plan",
+        "lessons learned"
+      ]
+    },
+    "dated-ruling": {
+      "flag": [
+        "ordered 10-23",
+        "Ordered 11-02",
+        "ordered on 09/14",
+        "ordered 10-23-2026"
+      ],
+      "pass": [
+        "an ordered list",
+        "ordered 3 copies",
+        "reordered 10-23"
+      ]
+    },
+    "ordered-provenance": {
+      "flag": [
+        "Avery-ordered",
+        "Owner-ordered",
+        "the Kai-ordered change"
+      ],
+      "pass": [
+        "well-ordered",
+        "Well-ordered sets",
+        "insertion-ordered",
+        "Time-ordered events",
+        "Reverse-ordered output",
+        "re-ordered",
+        "ordered"
+      ]
+    },
+    "model-id": {
+      "flag": [
+        "claude-opus-4-5",
+        "claude-sonnet-4-5-20250929",
+        "claude-3-5-haiku-latest",
+        "Claude Opus 4.5",
+        "Claude 3.5 Sonnet",
+        "ran on Sonnet 4.5.",
+        "Opus 4",
+        "Haiku 4.5",
+        "gpt-4o",
+        "GPT-5",
+        "gpt-4.1-mini",
+        "gpt-3.5-turbo",
+        "ChatGPT 4o",
+        "gpt-oss-120b",
+        "o3-mini",
+        "o1-preview",
+        "text-davinci-003",
+        "DALL-E 3",
+        "gemini-2.5-pro",
+        "Gemini 2.5 Pro",
+        "Gemini 1.5",
+        "gemma-2-9b",
+        "PaLM 2",
+        "llama-3.1-70b",
+        "Llama 3",
+        "Mistral 7B",
+        "mistral-large-2407",
+        "mixtral-8x7b",
+        "codestral-2501",
+        "deepseek-r1",
+        "DeepSeek-V3",
+        "qwen2.5-coder-32b",
+        "Qwen3",
+        "grok-4",
+        "phi-3-mini",
+        "nova-pro-v1",
+        "command-r-08-2024",
+        "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+      ],
+      "pass": [
+        "Claude Code 2.1.277",
+        "claude-code",
+        ".claude-plugin/marketplace.json",
+        "claude-agent-sdk",
+        "@anthropic-ai/claude-code@2.1.277",
+        "Gemini CLI",
+        "Gemini CLI 0.9.0",
+        "gemini-cli",
+        "@google/gemini-cli@0.9.0",
+        "Codex CLI 0.40.0",
+        "GitHub Copilot",
+        "a magnum opus",
+        "a sonnet of fourteen lines",
+        "a haiku",
+        "a llama",
+        "the mistral wind",
+        "Python 3.12",
+        "Node 20",
+        "Ubuntu 24.04",
+        "O(1)",
+        "the GPT acronym",
+        "claudeVersion: 2.1.318"
+      ]
+    },
+    "private-marker": {
+      "flag": [
+        "INTERNAL ONLY",
+        "DO NOT SHIP",
+        "DO_NOT_PUBLISH",
+        "NOT FOR PUBLICATION"
+      ],
+      "pass": [
+        "internal only",
+        "Do not ship broken builds",
+        "internally, only one"
+      ]
+    }
+  }
+}

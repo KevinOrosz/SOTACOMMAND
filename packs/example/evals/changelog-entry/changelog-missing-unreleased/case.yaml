@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: changelog-missing-unreleased
+expected_outcome: "An Unreleased section is added between the introduction and 1.2.0, with one Added bullet that puts --json in backticks; no version or date is invented and the released sections are unchanged."
+context:
+  scaffold_script: place-files.sh

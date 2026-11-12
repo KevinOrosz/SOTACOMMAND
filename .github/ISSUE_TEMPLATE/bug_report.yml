@@ -1,0 +1,86 @@
+name: Bug report
+description: Something in the engine, a skill, a tool or a workflow behaves wrongly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Before you paste anything, remove private details: names, email
+        addresses, home-directory paths, keys and tokens.
+
+        Found a security problem? Don't open an issue. Report it privately as `SECURITY.md` describes.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - Engine plugin (roles, hooks, workflows)
+        - A skill or skill pack
+        - Leak gate
+        - Extraction tool
+        - Skills toolchain (lint, registry, evals)
+        - Harness adapters (Codex, GitHub Copilot)
+        - Docs site or eval dashboard
+        - CI or release workflows
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you ran or asked for, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem, from a fresh checkout if you can.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The full output of the failing command, or the log lines around the problem.
+      render: text
+
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Harness
+      description: The agent harness you were using, if any.
+      options:
+        - Claude Code
+        - Codex
+        - GitHub Copilot
+        - Cursor
+        - Gemini CLI
+        - No harness (command line only)
+        - Another harness
+
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Operating system, Python version, harness version, and the release or commit of this repository.
+      placeholder: "macOS 15, Python 3.12, Claude Code 2.1.x, v0.1.0"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed names, email addresses, home-directory paths, keys and tokens from everything above.
+          required: true

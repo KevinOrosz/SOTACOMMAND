@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: csv-quoted-fields
+expected_outcome: "summary.md reports 4 rows and 4 columns, totals 477.75 for amount and 38.22 for tax, and reports no negative values."
+context:
+  scaffold_script: place-files.sh

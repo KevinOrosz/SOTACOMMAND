@@ -1,0 +1,94 @@
+# Release: on a v* tag, build one zip per plugin plus SHA256SUMS, attest every
+# file's build provenance, and publish a GitHub release with them attached.
+#
+# - Never runs on forks.
+# - The tag must be vMAJOR.MINOR.PATCH (optionally -prerelease) and point at
+#   a commit on the default branch, which passed the required checks.
+# - Artifact attestations need a public repository on Free, Pro and Team
+#   plans, so a private repository fails here on purpose rather than publish
+#   an unattested release. On GitHub Enterprise Cloud private repositories can
+#   attest too; delete the visibility check there.
+# - The release is created as a draft, the assets are attached, and only then
+#   is it published. With immutable releases on, the tag and assets lock at
+#   that moment, and GitHub adds a release attestation of its own.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A release run must finish on its own; cancelling it half-way could leave
+  # a draft release with only some assets attached.
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Build, attest and publish
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Check out (full history, to check the tag's branch)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the tag and the repository
+        env:
+          TAG: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag $TAG isn't vMAJOR.MINOR.PATCH, optionally with a -prerelease suffix."
+            exit 1
+          fi
+          if [ "$PRIVATE" = "true" ]; then
+            echo "::error::This repository is private, and artifact attestations need a public one on this plan, so no release was made. Releases come from the public repository."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor HEAD "origin/${DEFAULT_BRANCH}"; then
+            echo "::error::$TAG points at $(git rev-parse --short HEAD), which isn't on ${DEFAULT_BRANCH}. Tag a commit that is on ${DEFAULT_BRANCH}."
+            exit 1
+          fi
+          echo "Releasing $TAG from $(git rev-parse HEAD) on ${DEFAULT_BRANCH}."
+
+      - name: Build plugin zips and SHA256SUMS
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python3 .github/scripts/plugins.py package --tag "$TAG" --out dist --notes "$RUNNER_TEMP/release-notes.md"
+          (cd dist && sha256sum --check SHA256SUMS)
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          args=(--draft --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md")
+          case "$TAG" in
+            *-*) args+=(--prerelease) ;;
+          esac
+          gh release create "$TAG" dist/* "${args[@]}"
+          gh release edit "$TAG" --draft=false
+          gh release view "$TAG"
