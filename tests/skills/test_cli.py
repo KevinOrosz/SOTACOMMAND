@@ -77,10 +77,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(self.text, r"(?m)^    timeout-minutes: [0-9]+$")
         self.assertIn("persist-credentials: false", self.text)
         self.assertNotIn("pull_request_target", self.text)
-        self.assertIn("npm ci --prefix .github/ci/claude --ignore-scripts", self.text)
+        self.assertIn("npm ci --prefix tools/ci/claude --ignore-scripts", self.text)
 
     def test_ci_uses_one_integrity_pinned_native_cli_without_lifecycle_scripts(self) -> None:
-        folder = REPO / ".github" / "ci" / "claude"
+        folder = REPO / "tools" / "ci" / "claude"
         name = "@anthropic-ai/claude-code-linux-x64"
         version = json.loads((folder / "package.json").read_text())["dependencies"][name]
         lock = json.loads((folder / "package-lock.json").read_text())["packages"]
@@ -90,8 +90,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(package["integrity"], r"^sha512-[A-Za-z0-9+/]{86}==$")
         self.assertTrue(package["resolved"].startswith("https://registry.npmjs.org/@anthropic-ai/"))
         for workflow in (self.text, (WORKFLOW.parent / "validate.yml").read_text()):
-            self.assertIn("npm ci --prefix .github/ci/claude --ignore-scripts", workflow)
-            self.assertIn('CLAUDE_CLI: .github/ci/claude/node_modules/' + name + '/claude', workflow)
+            self.assertIn("npm ci --prefix tools/ci/claude --ignore-scripts", workflow)
+            self.assertIn('CLAUDE_CLI: tools/ci/claude/node_modules/' + name + '/claude', workflow)
             self.assertIn('"$CLAUDE_CLI" plugin', workflow)
             self.assertNotIn("npm install --global", workflow)
 

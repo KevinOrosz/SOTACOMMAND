@@ -22,7 +22,7 @@ updates:
       prefix: ci
     open-pull-requests-limit: 5
   - package-ecosystem: npm
-    directory: /.github/ci/claude
+    directory: /tools/ci/claude
     schedule:
       interval: weekly
     cooldown:
