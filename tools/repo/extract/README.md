@@ -171,3 +171,5 @@ The first exits 1 with every unsafe marker flagged. The second exits 0 and write
 ```
 export LEAKGATE_DENYLIST="$(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print("\n".join(list(m["persona_map"]) + list(m["owner_terms"])))' export/manifest.handled.example.json)"
 ```
+
+Export directories are private to their owner. Exported files use owner-only read/write permissions; executable files also retain owner execute permission on POSIX hosts.

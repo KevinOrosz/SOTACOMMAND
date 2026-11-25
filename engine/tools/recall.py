@@ -41,6 +41,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, TextIO, Tuple
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import project_files
 import os_config  # noqa: E402  (sibling module, found via the line above)
 
 HISTORY = os.path.join(".sotacommand", "history")
@@ -69,7 +70,10 @@ def keep_count(config: Optional[Dict[str, Any]]) -> int:
 
 def snapshots(root: str) -> List[str]:
     """History file names, oldest first."""
-    folder = os.path.join(root, HISTORY)
+    try:
+        folder = project_files.checked(root, HISTORY, directory=True)
+    except (OSError, ValueError):
+        return []
     if not os.path.isdir(folder):
         return []
     return sorted(name for name in os.listdir(folder) if _SNAPSHOT.match(name))
@@ -79,26 +83,26 @@ def archive_handoff(root: str, now: Optional[datetime.datetime] = None) -> Optio
     """Keep a copy of the handoff when it changed. Returns the new file's name, or None. Never raises."""
     try:
         config = _config(root)
-        source = os.path.join(root, HANDOFF)
+        source = project_files.checked(root, HANDOFF)
         if config is None or not os.path.isfile(source) or os.path.getsize(source) > MAX_FILE_BYTES:
             return None
-        with open(source, "rb") as handle:
+        with project_files.open_regular(root, HANDOFF, "rb") as handle:
             data = handle.read()
         if not data.strip():
             return None
         kept = snapshots(root)
         folder = os.path.join(root, HISTORY)
         if kept:
-            with open(os.path.join(folder, kept[-1]), "rb") as handle:
+            with project_files.open_regular(root, os.path.join(HISTORY, kept[-1]), "rb") as handle:
                 if handle.read() == data:
                     return None
-        os.makedirs(folder, exist_ok=True)
         now = now or datetime.datetime.now(datetime.timezone.utc)
         name = "handoff-%s.md" % now.strftime("%Y%m%dT%H%M%SZ")
-        with open(os.path.join(folder, name), "wb") as handle:
+        with project_files.open_regular(root, os.path.join(HISTORY, name), "wb") as handle:
             handle.write(data)
         for old in snapshots(root)[:-keep_count(config)]:
-            os.remove(os.path.join(folder, old))
+            with project_files.location(root, os.path.join(HISTORY, old)) as (leaf, opts):
+                os.unlink(leaf, **opts)
         return name
     except Exception:  # history must never break session start
         return None
@@ -123,20 +127,20 @@ def passages(root: str) -> List[Tuple[str, int, str]]:
     newest = snapshots(root)[-1:]
     current = os.path.join(root, HANDOFF)
     for relative in _files(root):
-        path = os.path.join(root, relative)
-        if newest and os.path.basename(relative) == newest[0] and os.path.isfile(current):
-            try:  # the newest copy is usually today's handoff: don't show the same passage twice
-                with open(path, "rb") as one, open(current, "rb") as two:
-                    if one.read() == two.read():
-                        continue
-            except OSError:
-                pass
         try:
+            path = project_files.checked(root, relative)
             if os.path.getsize(path) > MAX_FILE_BYTES:
                 continue
-            with open(path, "r", encoding="utf-8") as handle:
-                lines = handle.read().splitlines()
-        except (OSError, UnicodeDecodeError):
+            with project_files.open_regular(root, relative, "rb") as handle:
+                data = handle.read(MAX_FILE_BYTES + 1)
+            if len(data) > MAX_FILE_BYTES:
+                continue
+            if newest and os.path.basename(relative) == newest[0] and os.path.isfile(current):
+                with project_files.open_regular(root, HANDOFF, "rb") as latest:
+                    if latest.read(MAX_FILE_BYTES + 1) == data:
+                        continue
+            lines = data.decode("utf-8").splitlines()
+        except (OSError, ValueError):
             continue
         start, block = 1, []  # type: int, List[str]
         for number, line in enumerate(lines + [""], 1):

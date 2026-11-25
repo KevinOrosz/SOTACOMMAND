@@ -113,6 +113,12 @@ Read by `tools/session_close_gate.py` (Stop).
 - `timeout_seconds`: positive integer, default 300, capped at 570 so the gate reports before the hook's own 600-second timeout.
 - `block_repeats`: when false (the default), a verify that still fails after the gate already sent Claude back once lets Claude stop with a visible hook error. When true, the gate keeps blocking until Claude Code's limit of 8 consecutive continuations.
 
+The default is off. A command supplied by the checkout cannot run by itself. For manual verification, run a reviewed build or test from your normal isolated CI, leaving this value empty. The plugin needs no Docker setup in that mode.
+
+Automatic verification is optional on POSIX hosts with a local Docker Unix socket. Choose and inspect a local image by full image ID and review each input file. Run the trusted installed plugin's `tools/close_review.py` from an owner terminal with `--root PROJECT --command-json '"make test"' --image sha256:FULL_IMAGE_ID --input Makefile`; repeat `--input` for every required source file. Review the printed digest, then repeat with `--approve-digest DIGEST`. This stores an owner-only record outside the checkout. Changed command bytes, input bytes or executable bits require a fresh review. Files outside that list never enter the check. For linked brain lint, authorize the command array `["bash","bin/kb","lint"]` and its input files against the brain root separately. Use a short list of independent inputs without links. Review your image because its own contents are available to the process. A user who can edit the external approval or control Docker must already be trusted.
+
+The container runs as a non-root user with a read-only root, read-only snapshot, no network, bounded resources and no host credentials. It reports success or an exit status. Inspect detailed logs in a separately authorized manual run. An unavailable image, sandbox, or current approval leaves verification blocked.
+
 Stop fires at the end of every turn, so keep `verify` fast. The gate skips the check while background tasks are still running.
 
 ## `second_brain`

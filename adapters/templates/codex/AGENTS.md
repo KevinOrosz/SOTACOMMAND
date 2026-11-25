@@ -38,4 +38,4 @@ Skills live in `.agents/skills/`. Installed by SOTACOMMAND:
 
 ## Close
 
-When the owner says `close`, or before you report work as done, run the project's verify command (`close_gate.verify` in `os.config.json`, when set) and report its result. Rewrite `memory/HANDOFF.md` as a sitrep of at most 15 lines.
+When the owner says `close`, or before you report work as done, report the result of the owner's approved isolated verification; project configuration does not authorize a shell command. Rewrite `memory/HANDOFF.md` as a sitrep of at most 15 lines.

@@ -32,7 +32,7 @@ from .outputs import OutputSet
 from .roles import DELEGATION_TOOL, Role, main_role, split_tool
 from .text import json_text, read_template, render, template_path, yaml_scalar
 
-TOOLS = ("os_config.py", "ledger.py", "protect_paths.py", "protect_shell.py", "protect_team.py", "session_open.py", "session_close_gate.py", "skill_loop.py", "recall.py")
+TOOLS = ("project_files.py", "close_review.py", "os_config.py", "ledger.py", "protect_paths.py", "protect_shell.py", "protect_team.py", "session_open.py", "session_close_gate.py", "skill_loop.py", "recall.py")
 EXECUTABLE_TOOLS = ("ledger.py", "protect_paths.py", "protect_shell.py", "protect_team.py", "session_open.py", "session_close_gate.py", "skill_loop.py", "recall.py")
 STATIC_FILES = (
     "workflows/convergence.js",

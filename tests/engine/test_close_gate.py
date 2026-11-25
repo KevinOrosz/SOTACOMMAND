@@ -3,7 +3,11 @@
 import json
 import os
 import sys
+import subprocess
+import tempfile
 import unittest
+from unittest import mock
+from pathlib import Path
 
 from . import support
 
@@ -61,65 +65,56 @@ class CloseGateTests(support.TempDirTestCase):
         self.gate(verify=[])
         self.assertEqual(self.run_hook().returncode, 0)
 
-    def test_passing_verify_exits_0_silently(self):
-        self.gate(verify=python("print('all good')"))
-        result = self.run_hook()
-        self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
-
-    def test_failing_verify_exits_2_with_reason(self):
-        self.gate(verify=python("import sys; print('3 tests failed'); sys.exit(3)"))
-        reason = self.assertBlocked(self.run_hook(), "verify exited 3", "3 tests failed")
-        self.assertIn(sys.executable, reason)
+    def test_unapproved_commands_never_execute(self):
+        self.gate(verify=python("print('would run')"))
+        self.assertBlocked(self.run_hook(), "owner review required")
+        self.gate(verify="echo checking", block_repeats=True)
+        self.assertBlocked(self.run_hook(stop_input(self.root, active=True)), "owner review required")
 
     def test_failure_after_one_retry_exits_1_and_lets_claude_stop(self):
-        self.gate(verify=python("import sys; sys.exit(1)"))
+        self.gate(verify=python("pass"))
         result = self.run_hook(stop_input(self.root, active=True))
         self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stdout, "")
-        self.assertIn("still failing after one retry", result.stderr.splitlines()[0])
+        self.assertIn("still failing after one retry", result.stderr)
 
-    def test_block_repeats_keeps_blocking(self):
-        self.gate(verify=python("import sys; sys.exit(1)"), block_repeats=True)
-        self.assertBlocked(self.run_hook(stop_input(self.root, active=True)), "verify exited 1")
-
-    def test_shell_string_command(self):
-        if os.name == "nt":
-            self.skipTest("POSIX shell syntax")
-        self.gate(verify="echo checking && exit 4")
-        self.assertBlocked(self.run_hook(), "verify exited 4", "checking")
-        self.gate(verify="true")
-        self.assertEqual(self.run_hook().returncode, 0)
-
-    def test_verify_runs_in_the_project_root(self):
-        support.write(os.path.join(self.root, "marker.txt"), "x")
-        self.gate(verify=python("import os, sys; sys.exit(0 if os.path.exists('marker.txt') else 9)"))
-        self.assertEqual(self.run_hook().returncode, 0)
-
-    def test_timeout_blocks(self):
-        self.gate(verify=python("import time; time.sleep(30)"), timeout_seconds=1)
-        self.assertBlocked(self.run_hook(), "timed out after 1 seconds")
-
-    def test_command_that_cannot_start_blocks(self):
-        self.gate(verify=["definitely-not-a-real-command-7f3a"])
-        self.assertBlocked(self.run_hook(), "could not start")
-
-    def test_missing_file_output_still_blocks_through_stdout_json(self):
-        # The hooks reference treats exit 2 with empty stdout and a "No such file"
-        # stderr as non-blocking for Stop; the JSON on stdout keeps the block.
-        self.gate(verify=python("import sys; print('cat: x: No such file or directory'); sys.exit(1)"))
-        self.assertBlocked(self.run_hook(), "No such file or directory")
+    @unittest.skipUnless(os.name == "posix", "automatic verification is supported on POSIX Docker hosts")
+    def test_reviewed_snapshot_and_constrained_execution(self):
+        sys.path.insert(0, os.path.join(support.REPO_ROOT, "engine", "tools"))
+        import close_review
+        with tempfile.TemporaryDirectory() as owner:
+            root = Path(self.root)
+            (root / "code.txt").write_text("reviewed")
+            (root / "extra.txt").write_text("outside snapshot")
+            command = ["cat", "code.txt"]
+            with mock.patch.object(close_review, "_home", return_value=Path(owner)):
+                path = close_review._policy_path(self.root, command)
+                close_review._review_store(path, self.root, create=True)
+                record = {"image": "sha256:" + "a" * 64, "inputs": ["code.txt"],
+                          "digest": close_review.snapshot(self.root, ["code.txt"])}
+                path.write_text(json.dumps(record))
+                path.chmod(0o600)
+                def check_runner(args, **options):
+                    self.assertIn("--network=none", args)
+                    self.assertIn("--read-only", args)
+                    self.assertIn("--cap-drop=ALL", args)
+                    self.assertIn("--user=65534:65534", args)
+                    self.assertEqual(set(options["env"]), {"HOME", "PATH", "DOCKER_CONFIG"})
+                    files = Path(options["cwd"]) / "reviewed"
+                    self.assertEqual(sorted(f.name for f in files.iterdir()), ["code.txt"])
+                    return subprocess.CompletedProcess(args, 0)
+                with mock.patch.object(close_review.shutil, "which", return_value="/trusted/docker"), mock.patch.object(
+                        close_review.subprocess, "run", side_effect=check_runner) as runner:
+                    self.assertEqual(close_review.execute(command, self.root, 5), (0, ""))
+                    (root / "code.txt").write_text("new revision")
+                    with self.assertRaisesRegex(close_review.ReviewError, "inputs changed"):
+                        close_review.execute(command, self.root, 5)
+                    self.assertEqual(runner.call_count, 1)
 
     def test_background_tasks_skip_the_gate(self):
         self.gate(verify=python("import sys; sys.exit(1)"))
         task = {"id": "t1", "type": "subagent", "status": "running", "description": "build"}
         result = self.run_hook(stop_input(self.root, background=[task]))
         self.assertEqual((result.returncode, result.stdout), (0, ""))
-
-    def test_long_output_is_trimmed_to_its_tail(self):
-        self.gate(verify=python("import sys\nfor i in range(200): print('line', i)\nsys.exit(1)"))
-        reason = self.assertBlocked(self.run_hook(), "line 199")
-        self.assertNotIn("line 0\n", reason)
-        self.assertLess(len(reason), 4000)
 
     def test_invalid_gate_config_blocks_once(self):
         support.write(os.path.join(self.root, "os.config.json"), json.dumps({"close_gate": "npm test"}))

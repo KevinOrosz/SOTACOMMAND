@@ -15,6 +15,7 @@ import os
 from typing import List, Sequence, Tuple
 
 from .codex import find_skills, render_agents_md
+import project_files
 from .roles import Role
 from .text import read_template
 
@@ -61,12 +62,11 @@ def render_flat(repo_root: str, roles: Sequence[Role], include_labs: bool = Fals
 
 
 def _write_if_absent(target: str, relative: str, text: str, dry_run: bool) -> bool:
-    path = os.path.join(target, *relative.split("/"))
+    path = project_files.checked(target, relative)
     if os.path.exists(path):
         return False
     if not dry_run:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(target, relative, "x", encoding="utf-8", newline="\n") as handle:
             handle.write(text)
     return True
 

@@ -16,10 +16,13 @@ Standard library only. No network calls, no model calls.
 
 import json
 import os
+import sys
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)), "engine", "tools"))
+import project_files
 QUESTIONS_FILE = os.path.join(HERE, "questions.json")
 OUTPUTS = ("profile/owner.md", "profile/answers.json", "TEAM.md")
 MAX_TEXT = 400
@@ -377,8 +380,7 @@ def write_outputs(script: Dict[str, Any], answers: Dict[str, Any], target: str, 
         if dry_run:
             report.append("would write %s" % rel)
             continue
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(target, rel, "w" if redo else "x", encoding="utf-8", newline="\n") as handle:
             handle.write(contents[rel])
         report.append("%s %s" % ("replaced" if rel in existing else "wrote", rel))
         written.append(rel)

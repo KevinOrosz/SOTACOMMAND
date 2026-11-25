@@ -51,6 +51,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, TextIO
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import project_files
 import os_config  # noqa: E402  (sibling module, found via the line above)
 
 DIR = ".sotacommand"
@@ -99,11 +100,15 @@ def record(root: str, kind: str, hook_input: Optional[Dict[str, Any]] = None, no
             if value is None:
                 continue
             entry[key] = " ".join(value.split())[:MAX_DETAIL] if isinstance(value, str) else value
-        path = os.path.join(root, LEDGER)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        path = project_files.checked(root, LEDGER)
+        project_files.checked(root, OLDER)
         if os.path.isfile(path) and os.path.getsize(path) > MAX_BYTES:
-            os.replace(path, os.path.join(root, OLDER))
-        with open(path, "a", encoding="utf-8", newline="\n") as handle:
+            with project_files.location(root, LEDGER) as (name, opts):
+                if opts:
+                    os.replace(name, os.path.basename(OLDER), src_dir_fd=opts["dir_fd"], dst_dir_fd=opts["dir_fd"])
+                else:
+                    os.replace(name, project_files.checked(root, OLDER))
+        with project_files.open_regular(root, LEDGER, "a", encoding="utf-8", newline="\n") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
         return True
     except Exception:  # the ledger must never break a hook
@@ -117,7 +122,7 @@ def events(root: str) -> Iterator[Dict[str, Any]]:
         if not os.path.isfile(path):
             continue
         try:
-            with open(path, "r", encoding="utf-8") as handle:
+            with project_files.open_regular(root, relative, "r", encoding="utf-8") as handle:
                 for line in handle:
                     try:
                         entry = json.loads(line)
@@ -125,7 +130,7 @@ def events(root: str) -> Iterator[Dict[str, Any]]:
                         continue
                     if isinstance(entry, dict) and isinstance(entry.get("ts"), str) and entry.get("kind") in KINDS:
                         yield entry
-        except OSError:
+        except (OSError, ValueError):
             continue
 
 
@@ -215,9 +220,7 @@ def write_summary(root: str, days: int = 28, now: Optional[datetime.datetime] = 
         if not enabled(root):
             return None
         summary = summarize(root, days, now)
-        path = os.path.join(root, SUMMARY)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(root, SUMMARY, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(render(summary))
         return summary
     except Exception:

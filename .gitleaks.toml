@@ -15,13 +15,6 @@ minVersion = "v8.25.0"
 useDefault = true
 
 [[allowlists]]
-description = "Leak-gate fixtures: the planted corpus and the rule samples contain deliberate, invented secrets that measure the leak gate's recall. They are never real credentials."
-paths = [
-  '''(?:^|/)fixtures/leak-corpus/planted/''',
-  '''(?:^|/)fixtures/leak-corpus/samples/''',
-]
-
-[[allowlists]]
 description = "The clean leak corpus quotes the AWS documentation example key pair on purpose, to prove tutorials can cite it. Only those exact values, only in that one file."
 condition = "AND"
 paths = [
@@ -30,3 +23,10 @@ paths = [
 regexes = [
   '''^(?:AKIAIOSFODNN7EXAMPLE|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY)$''',
 ]
+
+[[allowlists]]
+description = "Only the SHA-256 checksums in the synthetic-fixture manifest"
+condition = "AND"
+paths = ['^\.github/scripts/fixture-digests\.json$']
+regexTarget = "line"
+regexes = ['^\s*"fixtures/[^"]+": "[0-9a-f]{64}",?\s*$']

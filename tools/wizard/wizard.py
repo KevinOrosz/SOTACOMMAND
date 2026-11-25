@@ -71,7 +71,9 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
+import subprocess
 import sys
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -81,6 +83,9 @@ import interview as interview_mod  # noqa: E402  (sibling module, found via the 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENGINE_DIR = os.path.join(REPO_ROOT, "engine")
+sys.path.insert(0, os.path.join(ENGINE_DIR, "tools"))
+import project_files
+
 TEMPLATES = os.path.join(ENGINE_DIR, "templates")
 ADAPTERS_DIR = os.path.join(REPO_ROOT, "adapters")
 COPILOT_AGENTS = os.path.join(REPO_ROOT, ".github", "agents")
@@ -176,8 +181,7 @@ def read_record(target: str) -> dict:
             data = json.load(handle)
     except (OSError, ValueError) as exc:
         raise ValueError("%s is unreadable (%s); remove it to start a fresh record" % (RECORD, exc))
-    files = data.get("files") if isinstance(data, dict) else None
-    return dict(files) if isinstance(files, dict) else {}
+    return _uninstall_record(json.dumps(data).encode("utf-8"))
 
 
 def write_record(target: str, written: Sequence[str]) -> None:
@@ -191,9 +195,7 @@ def write_record(target: str, written: Sequence[str]) -> None:
 
 
 def _save_record(target: str, files: dict) -> None:
-    path = _native(target, RECORD)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+    with project_files.open_regular(target, RECORD, "w", encoding="utf-8", newline="\n") as handle:
         json.dump({"installer": "tools/wizard/wizard.py", "version": current_version(),
                    "files": dict(sorted(files.items()))}, handle, indent=2)
         handle.write("\n")
@@ -211,20 +213,63 @@ def _files_under(target: str, relative_dir: str) -> List[str]:
 # --------------------------------------------------------------------------- install
 
 
-def _copy_if_absent(source: str, destination: str, dry_run: bool) -> bool:
-    """Copy a file unless the destination exists. Returns True when written."""
+def _copy_if_absent(source: str, target: str, relative: str, dry_run: bool) -> bool:
+    destination = project_files.checked(target, relative)
     if os.path.exists(destination):
         return False
     if not dry_run:
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-        shutil.copyfile(source, destination)
+        try:
+            with open(source, "rb") as src, project_files.open_regular(target, relative, "xb") as dst:
+                shutil.copyfileobj(src, dst)
+        except FileExistsError:
+            return False
     return True
+
+
+PRIVATE_PATHS = (".sotacommand/", "profile/answers.json", "profile/owner.md", "TEAM.md",
+                 "memory/HANDOFF.md", "memory/lessons.md", "os.config.json.bak*")
+
+
+def _private_git_files(target, dry_run):
+    """Persist ignores in a Git project; warn separately about files already in the index."""
+    current = os.path.abspath(target)
+    while not os.path.exists(os.path.join(current, ".git")):
+        parent = os.path.dirname(current)
+        if parent == current:
+            return []
+        current = parent
+    ignore = project_files.checked(target, ".gitignore")
+    existing = _read(ignore) if os.path.exists(ignore) else ""
+    if existing is None:
+        raise ValueError("cannot read project ignore file")
+    missing = ["/" + rel for rel in PRIVATE_PATHS if "/" + rel not in existing.splitlines()]
+    if missing and not dry_run:
+        with project_files.open_regular(target, ".gitignore", "a", encoding="utf-8", newline="\n") as handle:
+            handle.write(("\n" if existing and not existing.endswith("\n") else "") +
+                         "# Local SOTACOMMAND owner data\n" + "\n".join(missing) + "\n")
+    messages = ["private project paths: " + ("would add Git exclusions" if dry_run else "Git exclusions present")]
+    if shutil.which("git"):
+        result = subprocess.run(["git", "-c", "core.fsmonitor=false", "ls-files", "-z", "--", *PRIVATE_PATHS],
+                                cwd=target, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+        if result.stdout:
+            messages.append("WARNING: %d private file(s) are already tracked; review the Git index and history." %
+                            len(result.stdout.rstrip(b"\0").split(b"\0")))
+    return messages
+
+
+def _preflight_install(target):
+    # Include potential write destinations, before changing the first component.
+    paths = _uninstall_catalog() | {RECORD, ".gitignore"}
+    for relative in paths:
+        project_files.checked(target, relative)
+    if os.path.isfile(_native(target, RECORD)):
+        for relative in read_record(target):
+            project_files.checked(target, relative)
 
 
 def _install_project_files(target: str, dry_run: bool, report: List[str], written: List[str]) -> None:
     for relative, source in PROJECT_FILES:
-        destination = os.path.join(target, *relative.split("/"))
-        if _copy_if_absent(source, destination, dry_run):
+        if _copy_if_absent(source, target, relative, dry_run):
             report.append("wrote %s" % relative)
             written.append(relative)
         else:
@@ -265,8 +310,7 @@ def _install_copilot(target: str, dry_run: bool, report: List[str], written: Lis
     for name in sorted(os.listdir(COPILOT_AGENTS)):
         if not name.endswith(".agent.md"):
             continue
-        destination = os.path.join(target, ".github", "agents", name)
-        if _copy_if_absent(os.path.join(COPILOT_AGENTS, name), destination, dry_run):
+        if _copy_if_absent(os.path.join(COPILOT_AGENTS, name), target, ".github/agents/" + name, dry_run):
             report.append("wrote .github/agents/%s" % name)
             written.append(".github/agents/" + name)
         else:
@@ -308,6 +352,8 @@ def install(
     report = []  # type: List[str]
     skipped = []  # type: List[str]
     written = []  # type: List[str]
+    _preflight_install(target)
+    report.extend(_private_git_files(target, dry_run))
     _install_project_files(target, dry_run, report, written)
     if any(h in harnesses for h in AGENTS_MD_HARNESSES):
         skipped += _install_agents_md_and_skills(target, include_labs, dry_run, report, written)
@@ -353,9 +399,8 @@ def _read(path: str) -> Optional[str]:
         return None
 
 
-def _write(path: str, text: str) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+def _write(target: str, relative: str, text: str) -> None:
+    with project_files.open_regular(target, relative, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
 
 
@@ -430,6 +475,7 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
         raise ValueError("target folder does not exist: %s" % target)
     if not os.path.isfile(_native(target, RECORD)):
         raise ValueError("no install record in %s; run install first" % target)
+    _preflight_install(target)
     files = read_record(target)
     before = installed_version(target)
     report = []  # type: List[str]
@@ -498,15 +544,20 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
             kept.append(relative)
             report.append("kept your %s (you changed it); the new version is beside it as %s" % (relative, beside))
 
+    for relative, _ in writes:
+        project_files.checked(target, relative)
+    if config_plan:
+        project_files.checked(target, backup)
     if not dry_run:
         if config_plan is not None:
             unchanged = files.get("os.config.json") == _sha256(config_path)
-            _write(_native(target, backup), config_plan[1])
-            _write(config_path, config_plan[0])
+            _write(target, backup, config_plan[1])
+            _write(target, "os.config.json", config_plan[0])
             if unchanged:
                 record["os.config.json"] = _sha256(config_path)
         for relative, text in writes:
-            _write(_native(target, relative), text)
+            with project_files.open_regular(target, relative, "w", encoding="utf-8", newline="\n") as handle:
+                handle.write(text)
         state_path = _native(target, TOOL_OWNED[0])
         if os.path.isfile(state_path):
             names = sorted({rel.split("/")[2] for rel in record if rel.startswith(".agents/skills/") and rel.count("/") >= 3})
@@ -516,7 +567,7 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
             except (ValueError, AttributeError):
                 listed, listed_hashes = [], {}
             if names != listed or listed_hashes != _skill_hashes(record):
-                _write(state_path, json.dumps({"installer": "tools/wizard/wizard.py update", "managed": names,
+                _write(target, TOOL_OWNED[0], json.dumps({"installer": "tools/wizard/wizard.py update", "managed": names,
                                                "hashes": _skill_hashes(record)}, indent=2) + "\n")
                 record[TOOL_OWNED[0]] = _sha256(state_path)
         if record != files or before != current_version() or config_plan is not None:
@@ -533,48 +584,108 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
 # --------------------------------------------------------------------------- uninstall
 
 
+def _uninstall_catalog() -> set:
+    """Names this distribution can install, independent of the target's editable record."""
+    codex, adapters, _ = _osgen()
+    from osgen.outputs import IGNORED_NAMES, IGNORED_SUFFIXES
+
+    names = {name for name, _ in PROJECT_FILES}
+    names.update(interview_mod.OUTPUTS)
+    names.update(("AGENTS.md", adapters.GEMINI_FILE, adapters.CURSOR_RULE, adapters.FLAT_FILE, TOOL_OWNED[0]))
+    names.update(".github/agents/" + name for name in os.listdir(COPILOT_AGENTS) if name.endswith(".agent.md"))
+    for skill, source in codex.find_skills(REPO_ROOT, include_labs=True):
+        for folder, dirs, filenames in os.walk(source):
+            dirs[:] = [d for d in dirs if d not in IGNORED_NAMES and not d.endswith(IGNORED_SUFFIXES)
+                       and not (folder == source and d in codex.SKIPPED_SKILL_DIRS)]
+            for name in filenames:
+                if name in IGNORED_NAMES or name.endswith(IGNORED_SUFFIXES):
+                    continue
+                path = os.path.relpath(os.path.join(folder, name), source).replace(os.sep, "/")
+                names.add(".agents/skills/%s/%s" % (skill, path))
+    return names
+
+
+def _uninstall_record(data: bytes) -> dict:
+    record = json.loads(data)
+    files = record.get("files") if isinstance(record, dict) else None
+    if not isinstance(files, dict):
+        raise ValueError("uninstall requires a valid files table in the install record")
+    catalog = _uninstall_catalog()
+    for relative, digest in files.items():
+        # Update writes numbered .new copies only for generated adapters, skills and the team card.
+        base = re.sub(r"\.new(?:[2-9]|[1-9][0-9]+)?$", "", relative)
+        updatable = (base in {"AGENTS.md", "TEAM.md", "GEMINI.md", "SOTACOMMAND.prompt.md"}
+                     or base.startswith((".cursor/rules/", ".github/agents/", ".agents/skills/"))
+                     and base != TOOL_OWNED[0])
+        if relative not in catalog and not (base != relative and base in catalog and updatable):
+            raise ValueError("unrecognized managed file %r; uninstall stopped before removing files" % relative)
+        if not isinstance(digest, str) or not re.fullmatch("[0-9a-f]{64}", digest):
+            raise ValueError("invalid recorded digest for %r" % relative)
+    return files
+
+
+def _uninstall_plan(tree, files):
+    kept, remove, report = [], [], []
+    for relative in sorted(files):
+        actual = tree.read(relative, digest=True)
+        if actual is None:
+            continue
+        if relative != TOOL_OWNED[0] and actual != files[relative]:
+            kept.append(relative)
+            report.append("kept %s (changed since install)" % relative)
+        else:
+            remove.append(relative)
+    skills = sorted({rel.split("/")[2] for rel in kept if rel.startswith(".agents/skills/")})
+    if skills:
+        # Preflight even if a previous record omitted the adapter's bookkeeping file.
+        tree.read(TOOL_OWNED[0], digest=True)
+    return kept, remove, report, skills
+
+
+def _uninstall_from_tree(tree, target: str, dry_run: bool) -> Tuple[List[str], List[str]]:
+    raw = tree.read(RECORD)
+    if raw is None:
+        return ["nothing to uninstall: no %s in %s" % (RECORD, target)], []
+    files = _uninstall_record(raw)
+    kept, remove, report, skills = _uninstall_plan(tree, files)
+    if skills and TOOL_OWNED[0] in remove:
+        remove.remove(TOOL_OWNED[0])
+    if not kept:
+        remove.append(RECORD)
+    verb = "would remove" if dry_run else "removed"
+    report.extend("%s %s" % (verb, rel) for rel in remove)
+    if dry_run:
+        return report, kept
+    # Keep the original record through removal. If interrupted, missing entries are safe to retry.
+    for rel in remove:
+        if rel != RECORD:
+            tree.remove(rel)
+    if kept:
+        remaining = {rel: files[rel] for rel in kept}
+        if skills:
+            state = {"installer": "tools/wizard/wizard.py uninstall", "managed": skills, "hashes": _skill_hashes(remaining)}
+            encoded = (json.dumps(state, indent=2) + "\n").encode("utf-8")
+            tree.replace(TOOL_OWNED[0], encoded)
+            remaining[TOOL_OWNED[0]] = hashlib.sha256(encoded).hexdigest()
+        record = {"installer": "tools/wizard/wizard.py", "version": current_version(), "files": dict(sorted(remaining.items()))}
+        tree.replace(RECORD, (json.dumps(record, indent=2) + "\n").encode("utf-8"))
+    else:
+        tree.remove(RECORD)
+    tree.prune(list(files) + [RECORD])
+    return report, kept
+
+
 def uninstall(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
-    """Remove what ``install`` wrote and the owner hasn't changed. Returns (report, kept)."""
+    """Remove only cataloged, in-project files and keep owner edits."""
+    from uninstall_tree import UninstallTree
+
     if not os.path.isdir(target):
         raise ValueError("target folder does not exist: %s" % target)
-    files = read_record(target)
-    if not files and not os.path.isfile(_native(target, RECORD)):
-        return ["nothing to uninstall: no %s in %s" % (RECORD, target)], []
-    report = []  # type: List[str]
-    kept = []  # type: List[str]
-    removed_dirs = set()
-    verb = "would remove" if dry_run else "removed"
-    for relative in sorted(files) + [RECORD]:
-        path = _native(target, relative)
-        if not os.path.isfile(path):
-            removed_dirs.add(os.path.dirname(path))  # already gone; its folder may now be empty
-            continue
-        if relative not in TOOL_OWNED and _sha256(path) != files.get(relative):
-            report.append("kept %s (changed since install)" % relative)
-            kept.append(relative)
-            continue
-        if not dry_run:
-            os.remove(path)
-        report.append("%s %s" % (verb, relative))
-        removed_dirs.add(os.path.dirname(path))
-    if not dry_run:
-        for folder in sorted(removed_dirs, key=len, reverse=True):
-            while os.path.realpath(folder) != os.path.realpath(target) and os.path.isdir(folder) and not os.listdir(folder):
-                os.rmdir(folder)
-                folder = os.path.dirname(folder)
-    if kept and not dry_run:
-        # The kept files stay on the record with their install hashes, so a
-        # rerun after the owner reverts or deletes them finishes the job.
-        remaining = {relative: files[relative] for relative in kept}
-        skills = sorted({rel.split("/")[2] for rel in kept if rel.startswith(".agents/skills/") and rel.count("/") >= 3})
-        if skills:
-            # Keep the skills list too, so a later install recognizes these folders as its own.
-            state_path = _native(target, TOOL_OWNED[0])
-            _write(state_path, json.dumps({"installer": "tools/wizard/wizard.py uninstall", "managed": skills,
-                                           "hashes": _skill_hashes(remaining)}, indent=2) + "\n")
-            remaining[TOOL_OWNED[0]] = _sha256(state_path)
-        _save_record(target, remaining)
-    return report, kept
+    try:
+        with UninstallTree(target) as tree:
+            return _uninstall_from_tree(tree, target, dry_run)
+    except OSError as exc:
+        raise ValueError("uninstall could not safely access the project: %s" % exc) from exc
 
 
 # --------------------------------------------------------------------------- check
@@ -662,8 +773,11 @@ def run_interview(target: str, answers_file: Optional[str], redo: bool, dry_run:
                 sys.stderr.write("\nwizard: interview stopped; nothing was written\n")
                 return EXIT_PROBLEMS
         answers = interview_mod.normalize(script, raw)
+        _preflight_install(target)
+        private_status = _private_git_files(target, dry_run)
         lines, written = interview_mod.write_outputs(script, answers, target, redo, dry_run)
-    except interview_mod.InterviewError as exc:
+        lines += private_status
+    except (interview_mod.InterviewError, ValueError, OSError) as exc:
         sys.stderr.write("wizard: %s\n" % exc)
         return EXIT_PROBLEMS
     if written:

@@ -209,7 +209,7 @@ def release_notes(root, tag, version, rows):
         "## Verify",
         "",
         "Every asset, `SHA256SUMS` included, has a build provenance attestation from this",
-        "repository's release workflow, and the release itself is immutable.",
+        "repository's release workflow. Check GitHub's immutable-release indicator separately.",
         "",
         "```sh",
         "gh release download %s --repo %s" % (tag, repo),

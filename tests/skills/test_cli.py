@@ -1,5 +1,6 @@
 """skills.py plugins, the contract's rule table and the evals workflow's hardening."""
 
+import json
 import re
 import subprocess
 import sys
@@ -76,18 +77,36 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(self.text, r"(?m)^    timeout-minutes: [0-9]+$")
         self.assertIn("persist-credentials: false", self.text)
         self.assertNotIn("pull_request_target", self.text)
-        self.assertRegex(self.text, r'CLAUDE_CODE_VERSION: "[0-9]+\.[0-9]+\.[0-9]+"')
+        self.assertIn("npm ci --prefix .github/ci/claude --ignore-scripts", self.text)
+
+    def test_ci_uses_one_integrity_pinned_native_cli_without_lifecycle_scripts(self) -> None:
+        folder = REPO / ".github" / "ci" / "claude"
+        name = "@anthropic-ai/claude-code-linux-x64"
+        version = json.loads((folder / "package.json").read_text())["dependencies"][name]
+        lock = json.loads((folder / "package-lock.json").read_text())["packages"]
+        self.assertEqual(set(lock), {"", "node_modules/" + name})
+        package = lock["node_modules/" + name]
+        self.assertEqual(package["version"], version)
+        self.assertRegex(package["integrity"], r"^sha512-[A-Za-z0-9+/]{86}==$")
+        self.assertTrue(package["resolved"].startswith("https://registry.npmjs.org/@anthropic-ai/"))
+        for workflow in (self.text, (WORKFLOW.parent / "validate.yml").read_text()):
+            self.assertIn("npm ci --prefix .github/ci/claude --ignore-scripts", workflow)
+            self.assertIn('CLAUDE_CLI: .github/ci/claude/node_modules/' + name + '/claude', workflow)
+            self.assertIn('"$CLAUDE_CLI" plugin', workflow)
+            self.assertNotIn("npm install --global", workflow)
 
     def test_models_and_costs_come_from_repository_variables(self) -> None:
         self.assertIn("EVAL_MODEL: ${{ vars.EVAL_MODEL }}", self.text)
         self.assertIn("EVAL_JUDGE_MODEL: ${{ vars.EVAL_JUDGE_MODEL }}", self.text)
         self.assertIn('--model "$EVAL_MODEL"', self.text)
         self.assertIn('--judge-model "$EVAL_JUDGE_MODEL"', self.text)
-        self.assertIn("vars.EVAL_MAX_COST_PR", self.text)
-        self.assertIn("secrets.ANTHROPIC_API_KEY != ''", self.text)
+        self.assertIn("vars.EVAL_MAX_COST_FULL", self.text)
+        self.assertIn("secrets.EVAL_ANTHROPIC_API_KEY != ''", self.text)
         for flag in ("--threshold 0.8", "--trust-plugin", "--no-publish", "--json", "--max-cost-usd"):
             self.assertIn(flag, self.text)
-        self.assertIn('echo "ablation=none"', self.text)
+        self.assertNotIn('  pull_request:', self.text)
+        self.assertIn('environment: plugin-evaluations', self.text)
+        self.assertIn('github.event.repository.default_branch', self.text)
         self.assertIn('echo "ablation=with-without"', self.text)
 
     def test_no_expression_is_expanded_inside_a_run_script(self) -> None:

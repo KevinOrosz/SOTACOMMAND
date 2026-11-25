@@ -165,3 +165,5 @@ Model choice is never written in a file. Roles declare a capability tier (`low`,
 ### Building on SOTACOMMAND
 
 Contributing to this repository is different from using it: read [`AGENTS.md`](AGENTS.md) (rules, lane map, command contracts) and [`CONTRIBUTING.md`](CONTRIBUTING.md). Upgrades and new skills are welcome; the stable rule and the leak gate keep the bar high. Known gaps are in [`ROADMAP.md`](ROADMAP.md).
+
+In a Git project the wizard adds exclusions for local interview answers, owner profiles, handoffs and runtime state. It warns if Git already tracks private files; exclusions affect future additions and cannot erase published history.

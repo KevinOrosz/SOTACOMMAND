@@ -1,5 +1,6 @@
 """tools/wizard/wizard.py: the deterministic half of the one-word WIZARD boot."""
 
+import hashlib
 import json
 import os
 import re
@@ -138,6 +139,70 @@ class WizardTests(unittest.TestCase):
         again = run("uninstall", "--target", self.target)
         self.assertEqual(again.returncode, 0, again.stdout)
         self.assertEqual(os.listdir(self.target), ["notes.md"])
+
+    def test_uninstall_rejects_unmanaged_file_before_removing_anything(self):
+        self.assertEqual(run("install", "--target", self.target).returncode, 0)
+        path = self.path(".sotacommand", "install.json")
+        record = json.loads(self.read(".sotacommand", "install.json"))
+        with open(self.path("notes.txt"), "wb") as handle:
+            handle.write(b"owner notes")
+        record["files"]["notes.txt"] = hashlib.sha256(b"owner notes").hexdigest()
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(record, handle)
+        for flags in (("--dry-run",), ()):
+            result = run("uninstall", "--target", self.target, *flags)
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn("unrecognized managed file", result.stderr)
+            self.assertTrue(os.path.isfile(self.path("AGENTS.md")))
+            self.assertEqual(self.read("notes.txt"), "owner notes")
+            self.assertTrue(os.path.isfile(path))
+
+    def test_uninstall_rejects_linked_directory_and_linked_file(self):
+        self.assertEqual(run("install", "--target", self.target).returncode, 0)
+        for relative in ("memory", os.path.join("memory", "lessons.md"), ".sotacommand"):
+            path = self.path(relative)
+            original = path + ".saved"
+            os.rename(path, original)
+            try:
+                try:
+                    os.symlink(original, path, target_is_directory=os.path.isdir(original))
+                except OSError as exc:
+                    self.skipTest("symlinks unavailable: %s" % exc)
+                result = run("uninstall", "--target", self.target)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertTrue(os.path.isfile(self.path("AGENTS.md")))
+                self.assertTrue(os.path.exists(original))
+            finally:
+                if os.path.islink(path):
+                    os.unlink(path)
+                os.rename(original, path)
+
+    def test_uninstall_rejects_malformed_record_and_preserves_project(self):
+        self.assertEqual(run("install", "--target", self.target).returncode, 0)
+        path = self.path(".sotacommand", "install.json")
+        for record in ({"files": []}, {"files": {"AGENTS.md": 42}}):
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump(record, handle)
+            result = run("uninstall", "--target", self.target)
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertTrue(os.path.isfile(self.path("AGENTS.md")))
+            self.assertTrue(os.path.isfile(path))
+
+    def test_git_projects_exclude_private_state_and_warn_on_tracked_answers(self):
+        if not shutil.which("git"):
+            self.skipTest("Git unavailable")
+        subprocess.run(["git", "init", "-q", self.target], check=True)
+        os.makedirs(self.path("profile"))
+        with open(self.path("profile", "answers.json"), "w", encoding="utf-8") as handle:
+            handle.write("{}")
+        subprocess.run(["git", "-C", self.target, "add", "profile/answers.json"], check=True)
+        result = run("install", "--target", self.target)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("already tracked", result.stdout)
+        self.assertIn("/.sotacommand/", self.read(".gitignore"))
+        again = run("install", "--target", self.target)
+        self.assertEqual(again.returncode, 0, again.stderr)
+        self.assertEqual(self.read(".gitignore").count("/profile/answers.json"), 1)
 
     def test_uninstall_without_a_record(self):
         result = run("uninstall", "--target", self.target)

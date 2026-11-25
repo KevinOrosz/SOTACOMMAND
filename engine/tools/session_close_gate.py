@@ -13,7 +13,7 @@ Reads ``close_gate`` from the project's ``os.config.json``::
     }
 
 ``verify`` is a shell command string, or a list that runs without a shell. It
-runs in the project root. With no os.config.json, no ``close_gate`` or an
+runs in a read-only snapshot of owner-approved inputs in an isolated container. With no os.config.json, no ``close_gate`` or an
 empty ``verify``, the gate passes.
 
 Exit codes, per the hooks reference for Stop:
@@ -48,6 +48,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import os_config  # noqa: E402  (sibling module, found via the line above)
 import ledger  # noqa: E402
+import close_review  # noqa: E402
 
 DEFAULT_TIMEOUT = 300
 # Stay under the command-hook timeout (600 seconds) so the gate can report.
@@ -90,21 +91,11 @@ def read_gate(config: Optional[Dict[str, Any]]) -> Tuple[Optional[Command], int,
 def run_verify(command: Command, root: str, timeout: int) -> Tuple[Optional[int], str]:
     """Run verify in ``root``. Returns (exit code or None on timeout/start failure, output)."""
     try:
-        completed = subprocess.run(
-            command,
-            shell=isinstance(command, str),
-            cwd=root,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            timeout=timeout,
-        )
-    except subprocess.TimeoutExpired as exc:
-        output = exc.output or b""
-        return None, "timed out after %d seconds\n%s" % (timeout, _decode(output))
-    except OSError as exc:
-        return None, "could not start: %s" % exc
-    return completed.returncode, _decode(completed.stdout or b"")
+        return close_review.execute(command, root, timeout)
+    except subprocess.TimeoutExpired:
+        return None, "isolated verification timed out after %d seconds" % timeout
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return None, str(exc) or "invalid owner approval"
 
 
 def _decode(data: Union[bytes, str]) -> str:
@@ -157,14 +148,14 @@ def main(
         checks.append(("verify", command, root))
     if brain is not None and brain["lint_on_close"]:
         # bin/kb is a bash script; running it through bash also works where it isn't executable.
-        checks.append(("second brain lint", ["bash", os.path.join(brain["root"], "bin", "kb"), "lint"], brain["root"]))
+        checks.append(("second brain lint", ["bash", "bin/kb", "lint"], brain["root"]))
 
     for label, check, cwd in checks:
         code, output = run_verify(check, cwd, timeout)
         if code == 0:
             continue
         status = "exited %d" % code if code is not None else output.splitlines()[0]
-        reason = "close gate: %s %s: %s" % (label, status, describe(check))
+        reason = "close gate: %s %s" % (label, status)
         details = tail(output if code is not None else "\n".join(output.splitlines()[1:]))
         if details:
             reason += "\nLast output:\n" + details

@@ -101,6 +101,10 @@ jobs:
           fi
           python -m unittest discover -s tests -t .
 
+      - name: Exercise reviewed close checks in a local, unprivileged container
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: python .github/scripts/check_close_sandbox.py
+
       - name: Skills lint and registry drift
         run: |
           tool=tools/repo/skills/skills.py
@@ -181,23 +185,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Scan tracked files (fixtures/ and internal/ excluded)
+      - name: Scan tracked files and verify synthetic fixture exceptions
         env:
-          # Optional extra terms, one per line, kept out of the repository.
-          # Empty on forks and when the secret isn't set.
-          LEAKGATE_DENYLIST: ${{ secrets.LEAKGATE_DENYLIST }}
+          PRIVATE_STAGING: ${{ github.event.repository.private }}
         run: |
-          gate=tools/repo/leakgate/leakgate.py
-          if [ ! -f "$gate" ]; then
-            echo "::notice::$gate is not in this branch yet; skipping the leak gate."
-            exit 0
+          if [ "$PRIVATE_STAGING" = "true" ]; then
+            python .github/scripts/check_public_files.py --private-staging
+          else
+            python .github/scripts/check_public_files.py
           fi
-          list="$RUNNER_TEMP/tracked-files"
-          # internal/ exists only in the maintainers' private copy and never ships.
-          git ls-files -z -- . ':(exclude)fixtures/' ':(exclude)internal/' > "$list"
-          mapfile -d '' -t files < "$list"
-          echo "Scanning ${#files[@]} tracked files."
-          python "$gate" check "${files[@]}"
 
       - name: Benchmark the gate (planted leaks caught, clean text blocked)
         run: |
@@ -255,6 +251,13 @@ jobs:
             echo "Using .gitleaks.toml."
           else
             echo "::notice::No .gitleaks.toml yet; gitleaks runs with its default rules."
+          fi
+
+      - name: Include private historical fixture exceptions
+        if: github.event.repository.private
+        run: |
+          if [ -f internal/ci/gitleaks-history.ignore ]; then
+            cat internal/ci/gitleaks-history.ignore >> .gitleaksignore
           fi
 
       - name: Scan with gitleaks

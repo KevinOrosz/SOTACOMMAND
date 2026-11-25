@@ -70,7 +70,7 @@ class GeneratedCopilotAgentsTests(unittest.TestCase):
             "repurposer": ["read", "edit", "search"],
             "owner-auditor": ["read", "edit", "search"],
             "builder": ["execute", "read", "edit", "search"],
-            "researcher": ["execute", "read", "edit", "search", "web"],
+            "researcher": ["web"],
             "orchestrator": ["read", "edit", "search", "agent"],
         }
         for role_id, tools in expected.items():

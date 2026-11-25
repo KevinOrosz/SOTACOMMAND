@@ -7,8 +7,7 @@
 # .claude-plugin/marketplace.json exists. A marketplace run doesn't open the
 # listed plugins' files, so each plugin is validated on its own as well.
 #
-# The CLI version is pinned so results don't change under us. Bump
-# CLAUDE_CODE_VERSION on purpose, in its own pull request.
+# The Ubuntu CLI and its tarball integrity are pinned in .github/ci/claude/package-lock.json.
 name: Validate plugins
 
 on:
@@ -29,7 +28,7 @@ defaults:
     shell: bash
 
 env:
-  CLAUDE_CODE_VERSION: "2.1.318"
+  CLAUDE_CLI: .github/ci/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude
   # Keep the pinned CLI from updating itself or calling home during the run.
   DISABLE_UPDATES: "1"
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
@@ -70,12 +69,16 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
+          package-manager-cache: false
 
-      - name: Install Claude Code ${{ env.CLAUDE_CODE_VERSION }}
+      - name: Install and check the locked Claude CLI
         if: steps.find.outputs.count != '0'
         run: |
-          npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
-          claude --version
+          npm ci --prefix .github/ci/claude --ignore-scripts --no-fund --no-audit
+          version="$(node -p "require('./.github/ci/claude/package.json').dependencies['@anthropic-ai/claude-code-linux-x64']")"
+          "$CLAUDE_CLI" --version | grep -F "$version"
+          "$CLAUDE_CLI" plugin eval --help > /dev/null
+          echo "CLAUDE_CODE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: claude plugin validate --strict
         if: steps.find.outputs.count != '0'
@@ -87,7 +90,7 @@ jobs:
           rows=""
           for target in "${targets[@]}"; do
             echo "::group::claude plugin validate --strict $target"
-            if claude plugin validate --strict "$target" < /dev/null; then
+            if "$CLAUDE_CLI" plugin validate --strict "$target" < /dev/null; then
               result="pass"
             else
               result="FAIL"

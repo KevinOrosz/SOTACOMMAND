@@ -262,8 +262,8 @@ class Bytes(TempDirTestCase):
         self.assertEqual(result.data, b"\xef\xbb\xbfAsk orchestrator.\r\nThen researcher.\rEnd")
 
     def test_executable_bit_is_kept_and_modes_are_normalized(self):
-        self.assertEqual(self.transform("x\n", mode=0o100775).mode, 0o755)
-        self.assertEqual(self.transform("x\n", mode=0o100600).mode, 0o644)
+        self.assertEqual(self.transform("x\n", mode=0o100775).mode, 0o700)
+        self.assertEqual(self.transform("x\n", mode=0o100600).mode, 0o600)
 
     def test_binary_entries_are_copied_verbatim(self):
         raw = b"\x89PNG\x00\x01ZEPHYR"

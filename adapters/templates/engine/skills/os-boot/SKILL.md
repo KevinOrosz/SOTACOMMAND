@@ -41,7 +41,7 @@ For a decision that deserves independent checks, run the `/{{PLUGIN_NAME}}:conve
 
 ## Skills the team proposes
 
-The owner-auditor may propose a skill in `memory/skill-proposals/<name>.md` when the same problem keeps coming back. Show the owner the proposal and ask. Only on their yes ("approve skill <name>"), hand this command to a helper that can run commands and works in the project folder itself (the researcher if it is on; otherwise the builder, adding `--root` with the project folder, because the builder works in its own copy): `python3 "${CLAUDE_PLUGIN_ROOT}/tools/skill_loop.py" draft <name>`. It writes the skill as experimental and records how often the problem happened before.
+The owner-auditor may propose a skill in `memory/skill-proposals/<name>.md` when the same problem keeps coming back. Show the owner the proposal and ask. Only on their yes ("approve skill <name>"), hand this command to the builder, if enabled (add `--root` with the project folder, because the builder works in its own copy): `python3 "${CLAUDE_PLUGIN_ROOT}/tools/skill_loop.py" draft <name>`. It writes the skill as experimental and records how often the problem happened before.
 
 A `session-open: skill ...` line reports each such skill, measured from the ledger: `measuring`, `not helping yet`, `qualifies` or `unmeasured`. When one `qualifies`, tell the owner, and on their yes have the same helper run `... skill_loop.py promote <name>`. The tool refuses unless the ledger shows the problem stopped, so never mark a skill stable by editing its file.
 
