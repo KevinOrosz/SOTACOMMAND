@@ -23,3 +23,10 @@ paths = [
 regexes = [
   '''^(?:AKIAIOSFODNN7EXAMPLE|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY)$''',
 ]
+
+[[allowlists]]
+description = "Only the SHA-256 checksums in the synthetic-fixture manifest"
+condition = "AND"
+paths = ['^\.github/scripts/fixture-digests\.json$']
+regexTarget = "line"
+regexes = ['^\s*"fixtures/[^"]+": "[0-9a-f]{64}",?\s*$']
