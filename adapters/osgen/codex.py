@@ -128,12 +128,11 @@ def _unchanged(destination: str, name: str, recorded: Dict[str, str], source: st
         return False
     current = tree_hashes(destination, name)
     mine = {k: v for k, v in recorded.items() if k.startswith(name + "/")}
-    if mine and set(current) <= set(mine) and all(current[k] == mine[k] for k in current):
-        return True  # every file is as installed (a file the owner deleted is simply restored)
-    if source:
-        fresh = {k: v for k, v in tree_hashes(source, name).items() if not k.split("/")[1:2] or k.split("/")[1] not in SKIPPED_SKILL_DIRS}
-        return current == fresh
-    return False
+    fresh = {k: v for k, v in tree_hashes(source, name).items()
+             if k.split("/")[1] not in SKIPPED_SKILL_DIRS} if source else {}
+    if not fresh or not set(current) <= set(fresh):
+        return False  # An editable receipt cannot claim files outside the shipped skill.
+    return current == fresh or (bool(mine) and all(current[k] == mine.get(k) for k in current))
 
 
 def install(
@@ -220,7 +219,7 @@ def install(
     if os.path.exists(agents_md):
         report.append("kept existing AGENTS.md")
     else:
-        with project_files.open_regular(target, "AGENTS.md", "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(target, "AGENTS.md", "x", encoding="utf-8", newline="\n") as handle:
             handle.write(render_agents_md(roles, installed))
         report.append("wrote AGENTS.md")
     return report, skipped

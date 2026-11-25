@@ -195,9 +195,7 @@ def write_record(target: str, written: Sequence[str]) -> None:
 
 
 def _save_record(target: str, files: dict) -> None:
-    path = _native(target, RECORD)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+    with project_files.open_regular(target, RECORD, "w", encoding="utf-8", newline="\n") as handle:
         json.dump({"installer": "tools/wizard/wizard.py", "version": current_version(),
                    "files": dict(sorted(files.items()))}, handle, indent=2)
         handle.write("\n")
@@ -215,13 +213,16 @@ def _files_under(target: str, relative_dir: str) -> List[str]:
 # --------------------------------------------------------------------------- install
 
 
-def _copy_if_absent(source: str, destination: str, dry_run: bool) -> bool:
-    """Copy a file unless the destination exists. Returns True when written."""
+def _copy_if_absent(source: str, target: str, relative: str, dry_run: bool) -> bool:
+    destination = project_files.checked(target, relative)
     if os.path.exists(destination):
         return False
     if not dry_run:
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-        shutil.copyfile(source, destination)
+        try:
+            with open(source, "rb") as src, project_files.open_regular(target, relative, "xb") as dst:
+                shutil.copyfileobj(src, dst)
+        except FileExistsError:
+            return False
     return True
 
 
@@ -268,8 +269,7 @@ def _preflight_install(target):
 
 def _install_project_files(target: str, dry_run: bool, report: List[str], written: List[str]) -> None:
     for relative, source in PROJECT_FILES:
-        destination = os.path.join(target, *relative.split("/"))
-        if _copy_if_absent(source, destination, dry_run):
+        if _copy_if_absent(source, target, relative, dry_run):
             report.append("wrote %s" % relative)
             written.append(relative)
         else:
@@ -310,8 +310,7 @@ def _install_copilot(target: str, dry_run: bool, report: List[str], written: Lis
     for name in sorted(os.listdir(COPILOT_AGENTS)):
         if not name.endswith(".agent.md"):
             continue
-        destination = os.path.join(target, ".github", "agents", name)
-        if _copy_if_absent(os.path.join(COPILOT_AGENTS, name), destination, dry_run):
+        if _copy_if_absent(os.path.join(COPILOT_AGENTS, name), target, ".github/agents/" + name, dry_run):
             report.append("wrote .github/agents/%s" % name)
             written.append(".github/agents/" + name)
         else:
@@ -400,9 +399,8 @@ def _read(path: str) -> Optional[str]:
         return None
 
 
-def _write(path: str, text: str) -> None:
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+def _write(target: str, relative: str, text: str) -> None:
+    with project_files.open_regular(target, relative, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(text)
 
 
@@ -553,8 +551,8 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
     if not dry_run:
         if config_plan is not None:
             unchanged = files.get("os.config.json") == _sha256(config_path)
-            _write(_native(target, backup), config_plan[1])
-            _write(config_path, config_plan[0])
+            _write(target, backup, config_plan[1])
+            _write(target, "os.config.json", config_plan[0])
             if unchanged:
                 record["os.config.json"] = _sha256(config_path)
         for relative, text in writes:
@@ -569,7 +567,7 @@ def update(target: str, dry_run: bool = False) -> Tuple[List[str], List[str]]:
             except (ValueError, AttributeError):
                 listed, listed_hashes = [], {}
             if names != listed or listed_hashes != _skill_hashes(record):
-                _write(state_path, json.dumps({"installer": "tools/wizard/wizard.py update", "managed": names,
+                _write(target, TOOL_OWNED[0], json.dumps({"installer": "tools/wizard/wizard.py update", "managed": names,
                                                "hashes": _skill_hashes(record)}, indent=2) + "\n")
                 record[TOOL_OWNED[0]] = _sha256(state_path)
         if record != files or before != current_version() or config_plan is not None:

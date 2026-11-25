@@ -1,5 +1,6 @@
 """The Codex install: pack skills copied into .agents/skills/ plus AGENTS.md."""
 
+import hashlib
 import json
 import os
 import unittest
@@ -90,6 +91,17 @@ class CodexInstallTests(support.TempDirTestCase):
         self.assertTrue(os.path.exists(self.skills_dir("beta")))
         state = json.loads(support.read(self.skills_dir(".sotacommand-install.json")))
         self.assertEqual(state["managed"], ["alpha", "beta"])
+
+    def test_extra_owner_file_is_preserved_even_if_the_receipt_lists_it(self):
+        self.assertEqual(self.install().returncode, 0)
+        own = support.write(self.skills_dir("alpha", "notes.txt"), "owner notes")
+        receipt = self.skills_dir(".sotacommand-install.json")
+        state = json.loads(support.read(receipt))
+        state["hashes"]["alpha/notes.txt"] = hashlib.sha256(b"owner notes").hexdigest()
+        support.write(receipt, json.dumps(state))
+        result = self.install()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(support.read(own), "owner notes")
 
     def test_unmanaged_skill_folders_are_not_replaced(self):
         own = support.write(self.skills_dir("alpha", "SKILL.md"), "mine\n")

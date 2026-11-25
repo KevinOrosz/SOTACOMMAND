@@ -62,6 +62,7 @@ def location(root, relative, create=False):
 def open_regular(root, relative, mode, **kwargs):
     # Open without truncating. Validate the inode before any write, including for hard links.
     flags = os.O_RDONLY if mode.startswith("r") else os.O_WRONLY | os.O_CREAT
+    flags |= os.O_EXCL if mode.startswith("x") else 0
     flags |= os.O_APPEND if mode.startswith("a") else 0
     flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0)
     with location(root, relative, create=not mode.startswith("r")) as (name, opts):
