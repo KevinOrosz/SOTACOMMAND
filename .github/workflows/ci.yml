@@ -253,6 +253,13 @@ jobs:
             echo "::notice::No .gitleaks.toml yet; gitleaks runs with its default rules."
           fi
 
+      - name: Include private historical fixture exceptions
+        if: github.event.repository.private
+        run: |
+          if [ -f internal/ci/gitleaks-history.ignore ]; then
+            cat internal/ci/gitleaks-history.ignore >> .gitleaksignore
+          fi
+
       - name: Scan with gitleaks
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
