@@ -138,7 +138,7 @@ Commit only the redacted `summary.json`, never raw results: those name models an
 
 - builds one zip per plugin plus `SHA256SUMS`;
 - attests every file;
-- publishes an immutable release, using that `CHANGELOG.md` section as its notes.
+- publishes the release with that `CHANGELOG.md` section as its notes. When release immutability is enabled, GitHub locks the published tag and assets.
 
 ## Conduct and security
 

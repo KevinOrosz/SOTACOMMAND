@@ -47,7 +47,7 @@ Out of scope:
 - **Tools:** standard-library Python, with no network or model calls.
 - **Workflows:** they run with a read-only token unless a job asks for more. They pin every action to a full commit SHA, and they never keep checkout credentials.
 - **Pull request checks:** every pull request runs the leak gate, gitleaks and strict plugin validation. CodeQL also runs once the repository is public.
-- **Releases:** immutable, and every asset has a build provenance attestation.
+- The release workflow attests each packaged asset. Check the immutable-release indicator on the individual GitHub release before relying on its tag and assets being locked.
 
 To verify a download:
 

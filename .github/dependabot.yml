@@ -1,10 +1,9 @@
 # Dependabot keeps the SHA-pinned GitHub Actions current: it bumps the SHA and
 # its version comment together, in one grouped pull request a week.
 #
-# The tools are standard-library Python, so Actions is the only ecosystem.
-# Versions pinned inside workflow steps aren't seen by Dependabot and are
-# bumped by hand: CLAUDE_CODE_VERSION (validate.yml), GITLEAKS_VERSION and
-# ACTIONLINT_REF (ci.yml).
+# The runtime tools are standard-library Python. The Ubuntu workflows use one
+# integrity-locked npm package. GITLEAKS_VERSION and ACTIONLINT_REF in ci.yml
+# are bumped by hand.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -22,3 +21,10 @@ updates:
     commit-message:
       prefix: ci
     open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /.github/ci/claude
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 1

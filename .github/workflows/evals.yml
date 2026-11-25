@@ -17,8 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Bump on purpose, in its own pull request, together with validate.yml.
-  CLAUDE_CODE_VERSION: "2.1.318"
+  CLAUDE_CLI: .github/ci/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude
   DISABLE_UPDATES: "1"
   DISABLE_AUTOUPDATER: "1"
 
@@ -64,11 +63,14 @@ jobs:
           node-version: "24"
           package-manager-cache: false
 
-      - name: Install Claude Code ${{ env.CLAUDE_CODE_VERSION }}
+      - name: Install and check the locked Claude CLI
         if: env.HAS_API_KEY == 'true'
         run: |
-          npm install --global --no-fund --no-audit "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
-          claude --version
+          npm ci --prefix .github/ci/claude --ignore-scripts --no-fund --no-audit
+          version="$(node -p "require('./.github/ci/claude/package.json').dependencies['@anthropic-ai/claude-code-linux-x64']")"
+          "$CLAUDE_CLI" --version | grep -F "$version"
+          "$CLAUDE_CLI" plugin eval --help > /dev/null
+          echo "CLAUDE_CODE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Select plugins
         id: select
@@ -106,7 +108,7 @@ jobs:
             name="$(basename "$plugin")"
             echo "::group::claude plugin eval $plugin"
             code=0
-            claude plugin eval "$plugin" \
+            "$CLAUDE_CLI" plugin eval "$plugin" \
               --ablation "$ABLATION" \
               --threshold 0.8 \
               --trust-plugin \
