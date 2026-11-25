@@ -1,7 +1,7 @@
 # OpenSSF Scorecard: scores this repository's supply-chain practices.
 #
-# Runs on a public repository: weekly, on pushes to main and when branch rules
-# change. On a private copy the job skips itself, because the Scorecard action
+# Runs weekly, on request and when branch rules change. Push events carry
+# contributor email fields that the Scorecard action can print to its logs. On a private copy the job skips itself, because the Scorecard action
 # runs on private repositories only with GitHub Advanced Security and
 # publishing results (the badge and the api.scorecard.dev entry) needs a public
 # repository.
@@ -19,8 +19,6 @@ on:
   branch_protection_rule:
   schedule:
     - cron: "41 6 * * 3"
-  push:
-    branches: [main]
 
 permissions:
   contents: read
