@@ -97,13 +97,13 @@ class RuntimeTests(support.TempDirTestCase):
         output = self.run_script(args={
             "input": "Draft plan",
             "lenses": ["cost", "risk", " ", "users"],
-            "agentType": "sotacommand-engine:researcher",
+            "agentType": "sotacommand-engine:builder",
         })
         self.assertTrue(output["ok"], output.get("error"))
         passes = self.passes(output)
         self.assertEqual(len(passes), 3)
-        self.assertTrue(all(c["opts"]["agentType"] == "sotacommand-engine:researcher" for c in passes))
-        self.assertNotIn("agentType", self.synthesizer(output)[0]["opts"])
+        self.assertTrue(all(c["opts"]["agentType"] == "Explore" for c in passes))
+        self.assertEqual(self.synthesizer(output)[0]["opts"]["agentType"], "Explore")
 
     def test_identical_passes_by_count(self):
         output = self.run_script(args={"input": "x", "passes": 4})

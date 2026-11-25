@@ -87,6 +87,18 @@ class LedgerTests(support.TempDirTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('"deny"', result.stdout)
 
+    def test_linked_state_directory_preserves_neighboring_file(self):
+        self.config(self.template)
+        adjacent = self.path("neighbor")
+        os.mkdir(adjacent)
+        try:
+            os.symlink(adjacent, os.path.join(self.root, ".sotacommand"), target_is_directory=True)
+        except OSError as exc:
+            self.skipTest("symlinks unavailable: %s" % exc)
+        self.assertFalse(ledger.record(self.root, "owner_message"))
+        self.assertIsNone(ledger.write_summary(self.root))
+        self.assertEqual(os.listdir(adjacent), [])
+
     def test_summary_counts_a_window(self):
         def at(days_ago, kind, **fields):
             self.assertTrue(ledger.record(self.root, kind, now=NOW - datetime.timedelta(days=days_ago), **fields))

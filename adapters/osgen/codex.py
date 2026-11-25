@@ -9,19 +9,24 @@ Codex reads ``AGENTS.md`` and skills under ``.agents/skills/``. The install:
 * writes ``<target>/AGENTS.md`` only when the file does not exist;
 * records the skill folders it installed in
   ``.agents/skills/.sotacommand-install.json``, with a SHA-256 of every file.
-  A later install replaces a folder, or removes one whose skill is gone, only
+  A later install replaces a known folder only
   while every file in it still matches those hashes. A folder the owner
   edited is kept and reported; ``wizard.py update`` offers the new version
-  beside it. A folder it did not install is never touched unless ``force``
+  beside it. Retired skill folders stay in place for owner review. A folder it did not install is never touched unless ``force``
   is set.
 """
 
 import hashlib
 import json
 import os
+import re
+import sys
 import shutil
 import tempfile
 from typing import Dict, List, Sequence, Tuple
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "engine", "tools"))
+import project_files
 
 from . import PLUGIN_NAME
 from .docs import role_table
@@ -99,6 +104,9 @@ def tree_hashes(folder: str, prefix: str = "") -> Dict[str, str]:
     found = {}  # type: Dict[str, str]
     for current, dirs, files in os.walk(folder):
         dirs.sort()
+        for name in dirs:
+            if os.path.islink(os.path.join(current, name)):
+                raise CodexError("managed skill contains a linked directory")
         for name in sorted(files):
             path = os.path.join(current, name)
             relative = os.path.relpath(path, folder).replace(os.sep, "/")
@@ -142,9 +150,16 @@ def install(
     skipped: List[str] = []
     skills = find_skills(repo_root, include_labs)
     skills_dir = os.path.join(target, SKILLS_DIR)
+    project_files.checked(target, SKILLS_DIR, directory=True)
+    project_files.checked(target, os.path.join(SKILLS_DIR, STATE_FILE))
+    project_files.checked(target, "AGENTS.md")
+    for name, _ in skills:
+        project_files.checked(target, os.path.join(SKILLS_DIR, name), directory=True)
     os.makedirs(skills_dir, exist_ok=True)
     state_path = os.path.join(skills_dir, STATE_FILE)
     previous_list, recorded = _read_state(state_path)
+    if any(not re.fullmatch("[a-z0-9][a-z0-9-]*", name) for name in previous_list):
+        raise CodexError("invalid managed skill name in the install record")
     previous = set(previous_list)
     installed: List[str] = []
     kept: List[str] = []
@@ -187,15 +202,12 @@ def install(
         stale = os.path.join(skills_dir, name)
         if not os.path.isdir(stale) or os.path.islink(stale):
             continue
-        if force or _unchanged(stale, name, recorded):
-            shutil.rmtree(stale)
-            report.append("removed skill %s (no longer in any pack)" % name)
-        else:
-            report.append("kept your changed skill %s: it is no longer in any pack, and you edited it" % name)
-            kept.append(name)
-            hashes.update({k: v for k, v in recorded.items() if k.startswith(name + "/")})
+        # A record inside the project is not ownership evidence for a retired skill.
+        report.append("kept retired skill %s for owner review" % name)
+        kept.append(name)
+        hashes.update({k: v for k, v in recorded.items() if k.startswith(name + "/")})
 
-    with open(state_path, "w", encoding="utf-8", newline="\n") as handle:
+    with project_files.open_regular(target, os.path.join(SKILLS_DIR, STATE_FILE), "w", encoding="utf-8", newline="\n") as handle:
         json.dump(
             {"installer": "adapters/generate.py --harness codex", "managed": sorted(installed + kept),
              "hashes": dict(sorted(hashes.items()))},
@@ -208,7 +220,7 @@ def install(
     if os.path.exists(agents_md):
         report.append("kept existing AGENTS.md")
     else:
-        with open(agents_md, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(target, "AGENTS.md", "w", encoding="utf-8", newline="\n") as handle:
             handle.write(render_agents_md(roles, installed))
         report.append("wrote AGENTS.md")
     return report, skipped

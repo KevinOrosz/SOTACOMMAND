@@ -165,9 +165,9 @@ class RealRuns(FixtureRuns):
         for path, text in texts.items():
             for regex in [persona, owner, ex.HOME_PATH_RE] + flags:
                 self.assertIsNone(regex.search(text), "%s matches %s" % (path, regex.pattern))
-        self.assertEqual(snapshot["engine/scripts/session.sh"][1], 0o755)
-        self.assertEqual(snapshot["engine/scripts/router.py"][1], 0o755)
-        self.assertEqual(snapshot["AGENTS.md"][1], 0o644)
+        self.assertEqual(snapshot["engine/scripts/session.sh"][1], 0o700)
+        self.assertEqual(snapshot["engine/scripts/router.py"][1], 0o700)
+        self.assertEqual(snapshot["AGENTS.md"][1], 0o600)
         self.assertEqual(outcome.warnings, [])
 
     def test_output_is_deterministic(self):

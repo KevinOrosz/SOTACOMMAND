@@ -1,0 +1,23 @@
+# Approved synthetic fixtures: exact historical commit, file, rule and line.
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/.github/workflows/nightly.yml:github-app-token:11
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/app/config.js:jwt:4
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/app/settings.toml:generic-api-key:3
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/docs/aws-notes.md:aws-access-token:3
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/ops/aws.ini:aws-access-token:2
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/ops/ci-tokens.yaml:gitlab-pat:3
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/ops/ci-tokens.yaml:pypi-upload-token:2
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/ops/deploy-key.txt:private-key:2
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/scripts/deploy.sh:github-pat:3
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/scripts/release.sh:npm-access-token:4
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/planted/scripts/release.sh:slack-webhook-url:3
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:aws-access-token:86
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:aws-access-token:87
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:github-oauth:108
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:github-pat:107
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:gitlab-pat:137
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:jwt:150
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:npm-access-token:135
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:private-key:70
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:private-key:73
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:pypi-upload-token:136
+c24d8abe7c11da51cd91e4bda2b6c1b9a6525f6c:fixtures/leak-corpus/samples/rule-samples.json:slack-webhook-url:121

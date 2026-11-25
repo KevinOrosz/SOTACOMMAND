@@ -1178,7 +1178,7 @@ class Flag:
 class FileResult:
     entry: Entry
     data: bytes = b""
-    mode: int = 0o644
+    mode: int = 0o600
     events: List[Event] = field(default_factory=list)
     flags: List[Flag] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
@@ -1898,7 +1898,7 @@ class FileTransformer(object):
 
 def transform_entry(compiled: Compiled, entry: Entry, raw: bytes, mode: int = 0o644) -> FileResult:
     """Apply ``entry``'s rules to the source bytes ``raw`` and return the result."""
-    result = FileResult(entry, mode=0o755 if mode & 0o111 else 0o644)
+    result = FileResult(entry, mode=0o700 if mode & 0o111 else 0o600)
     if entry.binary:
         result.data = raw
         result.events.append(Event("binary", "binary", "copied verbatim (binary)", "binary files copied verbatim", 1))
@@ -2297,7 +2297,7 @@ def _install(build: Path, out: Path) -> None:
     partial = Path(tempfile.mkdtemp(prefix=".%s.partial-" % out.name, dir=str(out.parent)))
     try:
         shutil.copytree(str(build), str(partial), dirs_exist_ok=True)
-        os.chmod(str(partial), 0o755)
+        os.chmod(str(partial), 0o700)
         if out.exists():
             out.rmdir()  # checked empty upfront; never replace a non-empty tree
         os.rename(str(partial), str(out))

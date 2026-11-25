@@ -14,13 +14,10 @@ repos:
       - id: leakgate
         name: leakgate (private-material leak gate)
         description: Block staged files that leak names, home paths, secrets, house rule codes or model identifiers.
-        entry: python3 tools/repo/leakgate/leakgate.py check
+        entry: python3 .github/scripts/check_public_files.py
         language: system
         pass_filenames: true
         require_serial: false
-        # Synthetic leak fixtures. Planted leaks are verified by the bench below,
-        # which fails on any finding there that expected.json doesn't declare.
-        exclude: ^fixtures/(leak-corpus/(planted|samples)|fake-command)/
       - id: leakgate-bench
         name: leakgate bench (recall and false blocks)
         description: Re-measure recall and false blocks whenever the gate or its corpora change.

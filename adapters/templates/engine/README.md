@@ -42,7 +42,7 @@ The `tier` of each role is advisory in this harness: every agent inherits the se
 
 ## Requirements
 
-The hook tools need `python3` (3.9 or later) on `PATH` and use only the standard library. If the protected-path hook cannot run, Claude Code blocks the write (`onFailure: block`), so the boundary fails closed.
+The hooks require Python 3.9 or later. Automatic close verification additionally needs an owner-approved input snapshot and a local Docker image on a POSIX host. Leave verification empty for a dependency-free session and run your reviewed tests manually in isolated CI. If the protected-path hook cannot run, Claude Code blocks the write (`onFailure: block`), so the boundary fails closed.
 
 ## Project files
 

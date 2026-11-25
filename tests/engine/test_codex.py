@@ -79,17 +79,17 @@ class CodexInstallTests(support.TempDirTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(os.path.isfile(self.skills_dir("gamma", "SKILL.md")))
 
-    def test_reinstall_updates_and_removes_managed_skills(self):
+    def test_reinstall_updates_current_and_preserves_retired_skills(self):
         self.assertEqual(self.install().returncode, 0)
         support.write(os.path.join(self.alpha, "SKILL.md"), "---\nname: alpha\ndescription: v2.\n---\n\nNew.\n")
         os.remove(os.path.join(self.repo, "packs", "extra", "skills", "beta", "SKILL.md"))
         result = self.install()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("New.", support.read(self.skills_dir("alpha", "SKILL.md")))
-        self.assertIn("removed skill beta", result.stdout)
-        self.assertFalse(os.path.exists(self.skills_dir("beta")))
+        self.assertIn("kept retired skill beta", result.stdout)
+        self.assertTrue(os.path.exists(self.skills_dir("beta")))
         state = json.loads(support.read(self.skills_dir(".sotacommand-install.json")))
-        self.assertEqual(state["managed"], ["alpha"])
+        self.assertEqual(state["managed"], ["alpha", "beta"])
 
     def test_unmanaged_skill_folders_are_not_replaced(self):
         own = support.write(self.skills_dir("alpha", "SKILL.md"), "mine\n")

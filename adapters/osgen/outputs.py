@@ -16,8 +16,8 @@ from typing import Dict, Iterable, List, Sequence, Set, Tuple
 # Files that tooling drops next to sources; never treated as outputs or drift.
 IGNORED_NAMES = {"__pycache__", ".DS_Store"}
 IGNORED_SUFFIXES = (".pyc", ".pyo")
-EXECUTABLE_MODE = 0o755
-DEFAULT_MODE = 0o644
+EXECUTABLE_MODE = 0o700
+DEFAULT_MODE = 0o600
 
 
 class OutputSet(object):

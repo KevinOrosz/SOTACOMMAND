@@ -57,6 +57,7 @@ from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import project_files
 import os_config  # noqa: E402  (sibling module, found via the line above)
 import ledger  # noqa: E402
 
@@ -98,7 +99,7 @@ def read_proposal(root: str, name: str) -> "OrderedDict[str, str]":
     path = os.path.join(root, PROPOSALS, name + ".md")
     if not os.path.isfile(path):
         raise LoopError("no proposal at %s" % os.path.join(PROPOSALS, name + ".md").replace(os.sep, "/"))
-    with open(path, "r", encoding="utf-8") as handle:
+    with project_files.open_regular(root, os.path.join(PROPOSALS, name + ".md"), "r", encoding="utf-8") as handle:
         text = handle.read()
     if not text.startswith("---\n") or "\n---\n" not in text[4:]:
         raise LoopError("the proposal must start with a --- block holding name and description")
@@ -161,8 +162,7 @@ def draft(root: str, name: str, now: Optional[datetime.datetime] = None) -> List
         path = os.path.join(root, folder, name, "SKILL.md")
         if os.path.exists(path):
             continue
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(root, os.path.relpath(path, root), "w", encoding="utf-8", newline="\n") as handle:
             handle.write(text)
         written.append("wrote %s" % os.path.relpath(path, root).replace(os.sep, "/"))
     note = ("baseline: %d matching refusal(s) in the last %d days" % (baseline, BASELINE_DAYS)) if proposal["match"] else \
@@ -236,12 +236,12 @@ def promote(root: str, name: str, now: Optional[datetime.datetime] = None) -> Li
         path = os.path.join(root, folder, name, "SKILL.md")
         if read_skill(path) is None:
             continue
-        with open(path, "r", encoding="utf-8") as handle:
+        with project_files.open_regular(root, os.path.relpath(path, root), "r", encoding="utf-8") as handle:
             text = handle.read()
         text = re.sub(r'^  status: ".*"$', '  status: "stable"', text, count=1, flags=re.M)
         text = re.sub(r'^(  origin: .*)$', '\\1\n  qualified: %s\n  evidence: %s' % (_quote(now.strftime("%Y-%m-%d")), _quote(evidence)),
                       text, count=1, flags=re.M)
-        with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        with project_files.open_regular(root, os.path.relpath(path, root), "w", encoding="utf-8", newline="\n") as handle:
             handle.write(text)
         done.append("promoted %s" % os.path.relpath(path, root).replace(os.sep, "/"))
     return done + ["skill %s is stable: %s" % (name, evidence)]
@@ -263,7 +263,7 @@ def main(argv: Optional[Sequence[str]] = None, stdout: Optional[TextIO] = None, 
             parser.error("%s needs the skill's name" % args.command)
         else:
             lines = draft(root, args.name) if args.command == "draft" else promote(root, args.name)
-    except LoopError as exc:
+    except (LoopError, OSError, ValueError) as exc:
         stderr.write("skill_loop: %s\n" % exc)
         return 1
     stdout.write("\n".join(lines) + "\n")

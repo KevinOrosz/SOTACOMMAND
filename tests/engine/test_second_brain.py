@@ -63,10 +63,10 @@ class SecondBrainTests(support.TempDirTestCase):
         self.assertEqual(result.returncode, 2, result.stderr)
         decision = json.loads(result.stdout)
         self.assertEqual(decision["decision"], "block")
-        self.assertIn("second brain lint exited 1", decision["reason"])
-        self.assertIn("missing header", decision["reason"])
+        self.assertIn("owner review required", decision["reason"])
         support.write(os.path.join(self.brain, "bin", "kb"), LINT_OK)
-        self.assertEqual(support.run_tool("session_close_gate.py", stop_input(self.root), env=self.env).returncode, 0)
+        self.assertEqual(support.run_tool("session_close_gate.py", stop_input(self.root), env=self.env).returncode, 2)
+
 
     def test_agents_cannot_write_into_the_brain(self):
         self.config()

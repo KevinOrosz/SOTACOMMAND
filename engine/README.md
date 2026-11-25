@@ -42,14 +42,14 @@ For a single session from a checkout: `claude --plugin-dir engine`.
 | `builder` | Delegate code, automation and test work that changes files: reads before writing, makes surgical changes, and returns a working artifact with verification output. Works in an isolated git worktree. | tools: `Read`, `Grep`, `Glob`, `Write`, `Edit`, `Bash`, `Skill`; works in a git worktree |
 | `owner-auditor` | Delegate an audit of what the agent system costs its owner: interventions, time and repeated corrections. Returns a burden ledger, the top defect, one leverage fix and the decision left to the owner. Reads anything; writes only under memory/. | tools: `Read`, `Grep`, `Glob`, `Write`, `Edit`; denied: `Bash`, `PowerShell`, `NotebookEdit`; writes only `memory/**` |
 | `repurposer` | Delegate turning one approved source piece into platform-native drafts, in the platform order set in the project config. Drafts only: it never posts, uploads, schedules or invents material. | tools: `Read`, `Grep`, `Glob`, `Write`, `Edit`, `Skill`; denied: `Bash`, `PowerShell`, `WebFetch`, `mcp__*` |
-| `researcher` | Delegate research, analysis and specs: gather evidence, test a thesis, and turn findings into a build-ready spec with a self-scored rubric. Not for building software or producing content. | tools: `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`, `Write`, `Edit`, `Bash`, `Skill` |
+| `researcher` | Delegate research, analysis and specs: gather evidence, test a thesis, and turn findings into a build-ready spec with a self-scored rubric. Not for building software or producing content. | tools: `WebFetch`, `WebSearch`; denied: `Read`, `Grep`, `Glob`, `Write`, `Edit`, `Bash`, `PowerShell`, `Skill`, `mcp__*` |
 | `sensor` | Delegate reading public audience evidence (comments, threads, reviews) into one periodic brief with verbatim language and one falsifiable bet. Read-only: no account access, no replies, no content creation. | tools: `Read`, `Grep`, `Glob`, `WebFetch`, `WebSearch`; denied: `Write`, `Edit`, `NotebookEdit`, `Bash`, `PowerShell`, `mcp__*` |
 
 The `tier` of each role is advisory in this harness: every agent inherits the session's model. Map tiers to models per install.
 
 ## Requirements
 
-The hook tools need `python3` (3.9 or later) on `PATH` and use only the standard library. If the protected-path hook cannot run, Claude Code blocks the write (`onFailure: block`), so the boundary fails closed.
+The hooks require Python 3.9 or later. Automatic close verification additionally needs an owner-approved input snapshot and a local Docker image on a POSIX host. Leave verification empty for a dependency-free session and run your reviewed tests manually in isolated CI. If the protected-path hook cannot run, Claude Code blocks the write (`onFailure: block`), so the boundary fails closed.
 
 ## Project files
 
