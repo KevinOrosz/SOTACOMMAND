@@ -5,6 +5,7 @@ shipped files (everything in this lane outside fixtures/) must pass the gate,
 both with the public rules and with the owner's private seed list.
 """
 
+import json
 import ast
 import os
 import re
@@ -49,16 +50,18 @@ class HookAndScannerConfigTest(unittest.TestCase):
         text = read(".pre-commit-config.yaml")
         self.assertRegex(text, r"(?m)^\s*-\s*repo:\s*local\s*$")
         self.assertRegex(text, r"(?m)^\s*-\s*id:\s*leakgate\s*$")
-        self.assertRegex(text, r"(?m)^\s*entry:\s*python3 tools/repo/leakgate/leakgate\.py check\s*$")
+        self.assertRegex(text, r"(?m)^\s*entry:\s*python3 \.github/scripts/check_public_files\.py\s*$")
         self.assertRegex(text, r"(?m)^\s*language:\s*system\s*$")
         self.assertRegex(text, r"(?m)^\s*pass_filenames:\s*true\s*$")
-        exclude = re.search(r"(?m)^\s*exclude:\s*(\S+)\s*$", text).group(1)
-        self.assertRegex("fixtures/leak-corpus/planted/ops/aws.ini", exclude)
-        self.assertIsNone(re.search(exclude, "docs/guide.md"))
-        self.assertIsNone(re.search(exclude, "internal/PLAN.md"), "internal/ must stay blocked")
+        self.assertNotRegex(text, r"(?m)^\s*exclude:")
+        fixture_hashes = json.loads(read(".github/scripts/fixture-digests.json"))
+        self.assertTrue(fixture_hashes)
+        for path, digest in fixture_hashes.items():
+            self.assertTrue(path.startswith("fixtures/"))
+            self.assertRegex(digest, r"^[0-9a-f]{64}$")
         self.assertNotIn("\t", text)
 
-    def test_gitleaks_allowlists_the_planted_corpus(self):
+    def test_gitleaks_exempts_only_historical_fixture_findings(self):
         text = read(".gitleaks.toml")
         self.assertIn("useDefault = true", text)
         try:
@@ -72,7 +75,10 @@ class HookAndScannerConfigTest(unittest.TestCase):
         else:
             paths = re.findall(r"'''([^']+)'''", text)
         compiled = [re.compile(p) for p in paths]
-        self.assertTrue(any(p.search("fixtures/leak-corpus/planted/ops/aws.ini") for p in compiled))
+        self.assertFalse(any(p.search("fixtures/leak-corpus/planted/ops/aws.ini") for p in compiled))
+        for item in read(".gitleaksignore").splitlines():
+            if item and not item.startswith("#"):
+                self.assertRegex(item, r"^[a-f0-9]{40}:fixtures/leak-corpus/(planted|samples)/[^:]+:[\w-]+:[0-9]+$")
         self.assertFalse(any(p.search("tools/repo/leakgate/rules.json") for p in compiled))
 
 

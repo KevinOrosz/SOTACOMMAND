@@ -83,11 +83,13 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("EVAL_JUDGE_MODEL: ${{ vars.EVAL_JUDGE_MODEL }}", self.text)
         self.assertIn('--model "$EVAL_MODEL"', self.text)
         self.assertIn('--judge-model "$EVAL_JUDGE_MODEL"', self.text)
-        self.assertIn("vars.EVAL_MAX_COST_PR", self.text)
-        self.assertIn("secrets.ANTHROPIC_API_KEY != ''", self.text)
+        self.assertIn("vars.EVAL_MAX_COST_FULL", self.text)
+        self.assertIn("secrets.EVAL_ANTHROPIC_API_KEY != ''", self.text)
         for flag in ("--threshold 0.8", "--trust-plugin", "--no-publish", "--json", "--max-cost-usd"):
             self.assertIn(flag, self.text)
-        self.assertIn('echo "ablation=none"', self.text)
+        self.assertNotIn('  pull_request:', self.text)
+        self.assertIn('environment: plugin-evaluations', self.text)
+        self.assertIn('github.event.repository.default_branch', self.text)
         self.assertIn('echo "ablation=with-without"', self.text)
 
     def test_no_expression_is_expanded_inside_a_run_script(self) -> None:
