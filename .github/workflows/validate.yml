@@ -7,7 +7,7 @@
 # .claude-plugin/marketplace.json exists. A marketplace run doesn't open the
 # listed plugins' files, so each plugin is validated on its own as well.
 #
-# The Ubuntu CLI and its tarball integrity are pinned in .github/ci/claude/package-lock.json.
+# The Ubuntu CLI and its tarball integrity are pinned in tools/ci/claude/package-lock.json.
 name: Validate plugins
 
 on:
@@ -28,7 +28,7 @@ defaults:
     shell: bash
 
 env:
-  CLAUDE_CLI: .github/ci/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude
+  CLAUDE_CLI: tools/ci/claude/node_modules/@anthropic-ai/claude-code-linux-x64/claude
   # Keep the pinned CLI from updating itself or calling home during the run.
   DISABLE_UPDATES: "1"
   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
@@ -74,8 +74,8 @@ jobs:
       - name: Install and check the locked Claude CLI
         if: steps.find.outputs.count != '0'
         run: |
-          npm ci --prefix .github/ci/claude --ignore-scripts --no-fund --no-audit
-          version="$(node -p "require('./.github/ci/claude/package.json').dependencies['@anthropic-ai/claude-code-linux-x64']")"
+          npm ci --prefix tools/ci/claude --ignore-scripts --no-fund --no-audit
+          version="$(node -p "require('./tools/ci/claude/package.json').dependencies['@anthropic-ai/claude-code-linux-x64']")"
           "$CLAUDE_CLI" --version | grep -F "$version"
           "$CLAUDE_CLI" plugin eval --help > /dev/null
           echo "CLAUDE_CODE_VERSION=$version" >> "$GITHUB_ENV"
