@@ -2,6 +2,6 @@
   "name": "sotacommand-ci-claude",
   "private": true,
   "dependencies": {
-    "@anthropic-ai/claude-code-linux-x64": "2.1.318"
+    "@anthropic-ai/claude-code-linux-x64": "2.1.327"
   }
 }
